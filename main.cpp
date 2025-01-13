@@ -1,6 +1,7 @@
 #include <array>
 #include <iostream>
 #include <cstdint>
+#include <bitset>
 
 using linear_array = uint8_t;
 using coordinate = int;
@@ -44,7 +45,10 @@ enum PieceTypes : square
 
 square bits_of_type_of_piece(square p)
 {
-  return ((p << 8) >> 10) << 2;
+  p = p << 8;
+  p = p >> 10;
+  p = p << 2;
+  return p;
 }
 
 /* TO IGNORE ---------------------------------- > */
@@ -65,7 +69,9 @@ inline square update_move(square p)
 
 unsigned char *get_entry(square address)
 {
-  return val[(address << 8) >> 8];
+  address = address << 8;
+  address = address >> 8;
+  return val[address];
 }
 
 void initialize_table()
@@ -123,7 +129,11 @@ inline bool valid_coord(coord in)
 
 inline bool same_colors(square a, square b)
 {
-  return ((a & WHITE) & (b & WHITE)) | ((a & BLACK) & (b & BLACK));
+  if(b & WHITE)
+    return a & WHITE;
+  if(b & BLACK)
+    return a & BLACK;
+  return false;
 }
 
 inline bool has_white_color(square a) { return a & WHITE; }
@@ -134,11 +144,11 @@ inline square black_piece(PieceTypes type) { return type | BLACK | FIRST; }
 
 inline square white_piece(PieceTypes type) { return type | WHITE | FIRST; }
 
-inline square has_piece(square b)
+inline bool has_piece(square b)
 {
-  if (b)
-    return 0xFFFF;
-  return 0x0000;
+  if(bits_of_type_of_piece(b))
+    return true;
+  return false;
 }
 
 template <PieceTypes mark_type>
@@ -155,20 +165,27 @@ inline bool is_marked_as(square square)
   return square & mark_type;
 }
 
-inline square has_detected_piece(square b)
+inline bool has_detected_piece(square b)
 {
-  return (b & DETECTED_BLACK_PIECE) | (b & DETECTED_WHITE_PIECE);
+  return (b & DETECTED_BLACK_PIECE) || (b & DETECTED_WHITE_PIECE);
 }
 
-inline square color_and_detected_color_match(square b)
+inline bool color_and_detected_color_match(square b)
 {
-  return ((b & WHITE) & (b & DETECTED_BLACK_PIECE)) | ((b & BLACK) & (b & DETECTED_BLACK_PIECE));
+  if(b & WHITE)
+    return b & DETECTED_WHITE_PIECE;
+  if(b & BLACK)
+    return b & DETECTED_BLACK_PIECE;
+  return false;
 }
 
 void clear_utility_flags(std::array<square, n_squares> &raw_board)
 {
-  for (auto &v : raw_board)
-    v = (v << 6) >> 6;
+  for (auto &v : raw_board){
+    v = v << 6;
+    v = v >> 6;
+  }
+    
 }
 
 void print_attacked_status(const std::array<square, n_squares> &raw_board)
@@ -177,7 +194,7 @@ void print_attacked_status(const std::array<square, n_squares> &raw_board)
   {
     std::printf("| ");
     for (int col = 0; col < board_size; ++col)
-      std::printf(" %s ", raw_board[convert({row,col})] & ATTACKED_SQUARE ? "X" : "O");
+      std::printf(" %s ", is_marked_as<ATTACKED_SQUARE>(raw_board[convert({row,col})]) ? "X" : "O");
     std::printf("|\n");
   }
 }
@@ -188,7 +205,7 @@ void print_legal_status(const std::array<square, n_squares> &raw_board)
   {
     std::printf("| ");
     for (int col = 0; col < board_size; ++col)
-      std::printf(" %s ", raw_board[convert({row,col})] & LEGAL_SQUARE ? "X" : "O");
+      std::printf(" %s ", is_marked_as<LEGAL_SQUARE>(raw_board[convert({row,col})]) ? "X" : "O"); 
     std::printf("|\n");
   }
 }
@@ -368,10 +385,9 @@ void fill_king_move(const coord& location, std::array<square, n_squares> &raw_bo
   for (int i = 0; i < 8; ++i)
   {
     coord lcoord(location.row + moves[i][0], location.col + moves[i][1]);
-    if (valid_coord(lcoord) && !same_colors(piece_to_move, raw_board[convert(lcoord)]))
-    {
-      mark_as<mark_type>(raw_board[convert(lcoord)]);
-    }
+    if(valid_coord(lcoord))
+      if(!same_colors(piece_to_move, raw_board[convert(lcoord)]))
+        mark_as<mark_type>(raw_board[convert(lcoord)]);
   }
 }
 
@@ -520,13 +536,12 @@ movement find_movement(const std::array<square, n_squares> &board_state)
   uint8_t number_of_moved_pieces = 0;
   std::array<bool, n_squares> changed{0};
   for (linear_array pos = 0; pos < n_squares; ++pos)
-    if ((has_piece(board_state[pos]) != has_detected_piece(board_state[pos])) ||
-        !color_and_detected_color_match(board_state[pos])) // compare if  square moved or if color
-                                                           // of  square on square changed
-    {
-      changed[pos] = 1;
-      number_of_moved_pieces += 1;
-    }
+    if(board_state[pos])
+      if(((has_piece(board_state[pos]) != has_detected_piece(board_state[pos])) || !color_and_detected_color_match(board_state[pos]))) // of  square on square changed
+        {
+          changed[pos] = 1;
+          number_of_moved_pieces += 1;
+        }
 
   coord originalpos;
   coord finalpos;
@@ -549,8 +564,12 @@ movement find_movement(const std::array<square, n_squares> &board_state)
   return {board_state[convert(finalpos)], originalpos, finalpos};
 }
 
+const char* board_errors[] = {"king not detected","ilegal move","king in check"};
+
 struct Board
 {
+  
+
   Board()
   {
     initialize_table();
@@ -560,33 +579,47 @@ struct Board
   size_t offset = 0;
   bool white_turn = true;
 
-  void update(const std::array<uint16_t, n_squares> &measurments)
+  [[nodiscard]] const char* update(const std::array<uint16_t, n_squares> &measurments)
   {
     clear_utility_flags(m_board);
     for (linear_array i = 0; i < n_squares; ++i)
       m_board[i] |= (measurments[i] > 550) ? DETECTED_BLACK_PIECE : (measurments[i] < 500) ? DETECTED_WHITE_PIECE : NO_PIECE;
+    
+    std::printf("\ndetect status:\n");print_detected_piece_status(m_board); std::printf("\n");
     movement moved_piece = find_movement(m_board);
-    if (moved_piece.moved_piece & KING)
-    {
-      for (linear_array pos = 0; pos < n_squares; ++pos)
-      {
-        if (white_turn && (BLACK & m_board[pos]))
-          fill_attacked_squares(convert(pos), m_board);
-        else if ((m_board[pos] & WHITE))
-          fill_attacked_squares(convert(pos), m_board);
-      }
-      if (is_marked_as<ATTACKED_SQUARE>(m_board[convert(moved_piece.end)])) // we moved the king to this position yet its attacked by other pieces, no can do cowboy
-        return;
-    }
-    fill_allowed_moves(moved_piece.origin, m_board);
-    if (!is_marked_as<LEGAL_SQUARE>(m_board[convert(moved_piece.end)]))
+    // first we check if the move is legal without check considerations
+    std::array<square, n_squares> board_after_move{m_board};
+    fill_allowed_moves(moved_piece.origin, board_after_move);
+    std::printf("\nlegal status:\n");print_legal_status(board_after_move); std::printf("\n");
+    if (!is_marked_as<LEGAL_SQUARE>(board_after_move[convert(moved_piece.end)]))
     {
       // the move is not on the list of allowed moves, no can do cowboy
-      return;
+      return board_errors[1];
     }
+    
+    //the move is legal without checks.. now we check if the the king is attacked after the move
+    board_after_move[convert(moved_piece.end)] = update_move(board_after_move[convert(moved_piece.origin)]);
+    board_after_move[convert(moved_piece.origin)] = NO_PIECE;
+    coordinate our_king_location = -1;
+    for (linear_array pos = 0; pos < n_squares; ++pos){
+      if(white_turn){
+        if(BLACK & board_after_move[pos]) fill_attacked_squares(convert(pos), board_after_move);
+        if(board_after_move[pos] & KING && board_after_move[pos] & WHITE) our_king_location = pos;
+      } else {
+        if(WHITE & board_after_move[pos]) fill_attacked_squares(convert(pos), board_after_move);
+        if(board_after_move[pos] & KING && board_after_move[pos] & BLACK) our_king_location = pos;
+      }
+    }
+    if(our_king_location<0)
+      return board_errors[0];
+
+    if (is_marked_as<ATTACKED_SQUARE>(board_after_move[our_king_location])) // we moved the king to this position yet its attacked by other pieces, no can do cowboy
+      return board_errors[2];
+    
     m_board[convert(moved_piece.end)] = update_move(m_board[convert(moved_piece.origin)]);
     m_board[convert(moved_piece.origin)] = NO_PIECE;
     white_turn = !white_turn;
+    return nullptr;
   }
 
   Board &operator<<(square type)
@@ -612,18 +645,19 @@ std::ostream &operator<<(std::ostream &os, const Board &obj)
 void function1()
 {
   Board board;
-  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+  board << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(KING)
         << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
-        << black_piece(PAWN) << white_piece(PAWN) << NO_PIECE << NO_PIECE
+        << NO_PIECE << white_piece(PAWN) << NO_PIECE << NO_PIECE
         << white_piece(KING) << NO_PIECE << NO_PIECE << NO_PIECE;
 
   std::cout << board << std::endl;
-  std::array<uint16_t, n_squares> measurments{515, 515, 515, 515,
-                                              dummy_white, 515, 515, 515,
+  std::array<uint16_t, n_squares> measurments{515, 515, 515, dummy_black,
                                               515, 515, 515, 515,
-                                              dummy_white, 515, 515, 515};
+                                              dummy_white, dummy_white, 515, 515,
+                                              515, 515, 515, 515};
 
-  board.update(measurments);
+  if( const char* msg = board.update(measurments))
+    std::printf("error: %s\n",msg);
 
   std::cout << board << std::endl;
 }
@@ -657,11 +691,16 @@ void function3()
 }
 
 /*
-Time to write tests that validate the logic of the game 
+Time to write tests that validate the logic of the game :
+1. validate legal logic of game
+2. validate attack logic of game
+3. validate first logic of game 
+4. validate en passant logic of game
+5. 
 */
 
 int main()
 {
-  function2();
+  function1();
   return 0;
 }
