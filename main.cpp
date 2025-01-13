@@ -119,8 +119,8 @@ class movement{
   union{
     regular reg;
     special special;
-  } m;
-  bool is_regular;
+  } m_m;
+  bool m_is_regular;
 
 public:
   movement(piece pie,coordinate original, coordinate final){
@@ -132,7 +132,7 @@ public:
   }
 
   inline bool is_regular(){
-    return is_regular;
+    return m_is_regular;
   }
 
 };
