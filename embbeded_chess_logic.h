@@ -46,6 +46,29 @@ enum PieceTypes : square
   LEGAL_SQUARE = 2 << 12,         // 0001 0000 0000 0000
 };
 
+struct coord
+{
+  coordinate row;
+  coordinate col;
+
+  coord() : row{-1}, col{-1} {}
+  coord(int in_row, int in_col) : row{in_row}, col{in_col} {}
+};
+
+struct movement
+{
+  uint_fast8_t number_of_moves;
+  std::array<square, 4> changed_squares;
+  uint_fast8_t number_of_empty_squares;
+  std::array<coord, 2> empty_squares;
+  uint_fast8_t number_of_filled_squares;
+  std::array<coord, 2> filled_squares;
+
+  movement();
+
+  void check_and_store_if_changed_square(square in, linear_array pos);
+};
+
 unsigned char piece_names[256][3];
 
 void fill_entry(square address, const char string[2])
@@ -92,15 +115,6 @@ void initialize_table()
   fill_entry(WHITE, " W");
 }
 
-struct coord
-{
-  coordinate row;
-  coordinate col;
-
-  coord() : row{-1}, col{-1} {}
-  coord(int in_row, int in_col) : row{in_row}, col{in_col} {}
-};
-
 inline coord convert(linear_array position)
 {
   coordinate col = position % board_size;
@@ -115,7 +129,7 @@ inline bool valid_coord(coord in)
 
 inline linear_array convert(coord coord)
 {
-  assert(coord.col>=0 && coord.row>=0);
+  assert(coord.col >= 0 && coord.row >= 0);
   return coord.row * board_size + coord.col;
 }
 
@@ -182,51 +196,43 @@ void clear_en_passant_flags(std::array<square, n_squares> &raw_board)
       v ^= EN_PASSANT;
 }
 
-struct movement
+movement::movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of_filled_squares{0}
 {
-  uint_fast8_t number_of_moves;
-  std::array<square, 4> changed_squares;
-  uint_fast8_t number_of_empty_squares;
-  std::array<coord, 2> empty_squares;
-  uint_fast8_t number_of_filled_squares;
-  std::array<coord, 2> filled_squares;
+  changed_squares.fill(NO_PIECE);
+  empty_squares.fill(coord{});
+  filled_squares.fill(coord{});
+}
 
-  movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of_filled_squares{0} {
-    changed_squares.fill(NO_PIECE);
-    empty_squares.fill(coord{});
-    filled_squares.fill(coord{});
+void movement::check_and_store_if_changed_square(square in, linear_array pos)
+{
+  assert(in);
+  if (!has_piece(in) && has_detected_piece(in))
+  { // piece was to this previously empty square
+    changed_squares[number_of_moves] = in;
+    filled_squares[number_of_filled_squares] = convert(pos);
+    ++number_of_moves;
+    ++number_of_filled_squares;
+    return;
   }
-
-  void check_and_store_if_changed_square(square in, linear_array pos)
+  if (has_piece(in) && !has_detected_piece(in)) // piece was moved from this square
   {
-    assert(in);
-    if(!has_piece(in) && has_detected_piece(in)){  // piece was to this previously empty square
-      changed_squares[number_of_moves] = in;
-      filled_squares[number_of_filled_squares] = convert(pos);
-      ++number_of_moves;
-      ++number_of_filled_squares;
-      return;
-    }
-    if (has_piece(in) && !has_detected_piece(in)) // piece was moved from this square
-    {
-      changed_squares[number_of_moves] = in;
-      empty_squares[number_of_empty_squares] = convert(pos);
-      ++number_of_moves;
-      ++number_of_empty_squares;
-      return;
-    }
-    if (has_piece(in) && !color_and_detected_color_match(in)) // the square as always filled but the colors between the current piece and the new piece are incorrect
-    {
-      changed_squares[number_of_moves] = in;
-      filled_squares[number_of_filled_squares] = convert(pos);
-      ++number_of_moves;
-      ++number_of_filled_squares;
-    }
+    changed_squares[number_of_moves] = in;
+    empty_squares[number_of_empty_squares] = convert(pos);
+    ++number_of_moves;
+    ++number_of_empty_squares;
+    return;
   }
-};
+  if (has_piece(in) && !color_and_detected_color_match(in)) // the square as always filled but the colors between the current piece and the new piece are incorrect
+  {
+    changed_squares[number_of_moves] = in;
+    filled_squares[number_of_filled_squares] = convert(pos);
+    ++number_of_moves;
+    ++number_of_filled_squares;
+  }
+}
 
 template <PieceTypes mark_type>
-void fill_rook_move(coord location, std::array<square, n_squares> &raw_board)
+void fill_rook_move(coord location, std::array<square, n_squares> &raw_board) // TODO : this code can be considerably simplified
 {
   square piece_to_move = raw_board[convert(location)];
   for (coordinate row = location.row + 1; row < board_size; ++row)
@@ -268,7 +274,7 @@ void fill_rook_move(coord location, std::array<square, n_squares> &raw_board)
 }
 
 template <PieceTypes mark_type>
-void fill_bishop_move(const coord &location, std::array<square, n_squares> &raw_board)
+void fill_bishop_move(const coord &location, std::array<square, n_squares> &raw_board) // TODO : this code can be considerably simplified
 {
   square piece_to_move = raw_board[convert(location)];
   coordinate row = location.row + 1;
@@ -351,23 +357,23 @@ void fill_pawn_move(coord location, std::array<square, n_squares> &raw_board)
 
   if (piece & FIRST)
   { // can jump two squares
-    coord cord(location.row+offset*2, location.col);
-    if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]) )
+    coord cord(location.row + offset * 2, location.col);
+    if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
-    cord = coord(location.row+offset, location.col);
+    cord = coord(location.row + offset, location.col);
     if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
   }
   else
   { // can jump one square
-    coord cord(location.row+offset, location.col);
+    coord cord(location.row + offset, location.col);
     if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
     // now we check for en passant
-    cord = coord(location.row+offset, location.col-1);
+    cord = coord(location.row + offset, location.col - 1);
     if (valid_coord(cord) && raw_board[convert(cord)] & EN_PASSANT)
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
-    cord = coord(location.row+offset, location.col + 1);
+    cord = coord(location.row + offset, location.col + 1);
     if (valid_coord(cord) && raw_board[convert(cord)] & EN_PASSANT)
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
   }
@@ -377,17 +383,18 @@ void fill_pawn_attack(coord location, std::array<square, n_squares> &raw_board)
 {
   auto piece = raw_board[convert(location)];
   coordinate offset = (piece & WHITE) ? 1 : -1;
-  coord cord(location.row +offset, location.col -1);
+  coord cord(location.row + offset, location.col - 1);
   if (valid_coord(cord))
     mark_as<ATTACKED_SQUARE>(raw_board[convert(cord)]);
-  cord = coord(location.row+offset, location.col +1);
+  cord = coord(location.row + offset, location.col + 1);
   if (valid_coord(cord))
     mark_as<ATTACKED_SQUARE>(raw_board[convert(cord)]);
 }
 
 void fill_attacked_squares(coord location, std::array<square, n_squares> &raw_board)
 {
-  switch (MASK_PIECES & raw_board[convert(location)]){
+  switch (MASK_PIECES & raw_board[convert(location)])
+  {
   case PAWN:
     fill_pawn_attack(location, raw_board);
     break;
@@ -415,7 +422,8 @@ void fill_attacked_squares(coord location, std::array<square, n_squares> &raw_bo
 
 void fill_allowed_moves(coord location, std::array<square, n_squares> &raw_board)
 {
-  switch (MASK_PIECES & raw_board[convert(location)]){
+  switch (MASK_PIECES & raw_board[convert(location)])
+  {
   case PAWN:
     fill_pawn_move(location, raw_board);
     break;
@@ -441,7 +449,8 @@ void fill_allowed_moves(coord location, std::array<square, n_squares> &raw_board
   }
 };
 
-movement find_movement(const std::array<square, n_squares> &board_state){
+movement find_movement(const std::array<square, n_squares> &board_state)
+{
   movement detected_movements{};
   for (linear_array pos = 0; pos < n_squares; ++pos)
     if (board_state[pos])
@@ -449,13 +458,14 @@ movement find_movement(const std::array<square, n_squares> &board_state){
   return detected_movements;
 }
 
-enum error_code {
-    KING_NOT_DETECTED = 0,
-    ILLEGAL_MOVE = 1,
-    PINNED_PIECE = 2,
-    TOO_MANY_MOVES = 3,
-    CASTELING_DISSALOWED = 4,
-    INVALID_EN_PASSANT = 5
+enum error_code
+{
+  KING_NOT_DETECTED = 0,
+  ILLEGAL_MOVE = 1,
+  PINNED_PIECE = 2,
+  TOO_MANY_MOVES = 3,
+  CASTELING_DISSALOWED = 4,
+  INVALID_EN_PASSANT = 5
 };
 const char *board_errors[] = {"king not detected", "ilegal move", "king in check", "unexpected number moves", "casteling not allowed", "inconsistent en passant"};
 
@@ -572,7 +582,8 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   return board_errors[4]; // TODO: for now casteling is dissallowed because our board is not large enough
 }
 
-void clear_and_update_detection(std::array<square, n_squares>& m_board,const std::array<uint16_t, n_squares> &measurments){
+void clear_and_update_detection(std::array<square, n_squares> &m_board, const std::array<uint16_t, n_squares> &measurments)
+{
   clear_utility_flags(m_board);
   for (linear_array i = 0; i < n_squares; ++i)
     m_board[i] |= (measurments[i] > 550) ? DETECTED_BLACK_PIECE : (measurments[i] < 500) ? DETECTED_WHITE_PIECE
@@ -589,16 +600,17 @@ struct Board
   std::array<square, n_squares> m_board;
   size_t offset = 0;
   bool white_turn;
-  
+
   /*
   each function inside the update must be tested to the limit so that things are correct
   */
   [[nodiscard]] const char *update(const std::array<uint16_t, n_squares> &measurments)
   {
-    clear_and_update_detection(m_board,measurments);
+    clear_and_update_detection(m_board, measurments);
     movement moved_piece = find_movement(m_board);
     const char *error_msg = nullptr;
-    switch (moved_piece.number_of_moves){
+    switch (moved_piece.number_of_moves)
+    {
     case 2:
       error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, white_turn);
       break;
@@ -618,10 +630,9 @@ struct Board
 
   Board &operator<<(square type)
   {
-     // this means that when we fill the board, at a later point in time we can refill it with a known initial position
+    // this means that when we fill the board, at a later point in time we can refill it with a known initial position
     m_board[offset % n_squares] = type;
     ++offset;
     return *this;
   }
 };
-
