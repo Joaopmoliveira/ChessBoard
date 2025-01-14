@@ -1364,7 +1364,7 @@ void test_king_attacked_squares(){
   print_attacked_status(board.m_board);
 }
 
-void test_king_move_squares(){
+void test_king_legal_squares(){
   Board board;
   board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
         << NO_PIECE << black_piece(KING) << NO_PIECE << NO_PIECE
@@ -1457,14 +1457,17 @@ void test_bishop_board_update_after_measurment(){
 }
 
 int main(){
-  std::printf("test_white_piece_measurment_detection: <---------------------------------> \n"); test_white_piece_measurment_detection();
-  std::printf("test_black_piece_measurment_detection: <---------------------------------> \n"); test_black_piece_measurment_detection();
-  std::printf("test_piece_measurment_detection: <---------------------------------> \n"); test_piece_measurment_detection();
-  std::printf("test_rook_attacked_squares: <---------------------------------> \n"); test_rook_attacked_squares();
-  std::printf("test_rook_legal_squares: <---------------------------------> \n"); test_rook_legal_squares();
-  std::printf("test_knight_attacked_squares: <---------------------------------> \n"); test_knight_attacked_squares();
-  std::printf("test_knight_legal_squares: <---------------------------------> \n"); test_knight_legal_squares();
-  std::printf("test_queen_attacked_squares: <---------------------------------> \n"); test_queen_attacked_squares();
-  std::printf("test_queen_legal_squares: <---------------------------------> \n"); test_queen_legal_squares();
+  std::printf("test_white_piece_measurment_detection: <=================================> \n"); test_white_piece_measurment_detection();
+  std::printf("test_black_piece_measurment_detection: <=================================> \n"); test_black_piece_measurment_detection();
+  std::printf("test_piece_measurment_detection: <=================================> \n"); test_piece_measurment_detection();
+  std::printf("test_rook_attacked_squares: <=================================> \n"); test_rook_attacked_squares();
+  std::printf("test_rook_legal_squares: <=================================> \n"); test_rook_legal_squares();
+  std::printf("test_knight_attacked_squares: <=================================> \n"); test_knight_attacked_squares();
+  std::printf("test_knight_legal_squares: <=================================> \n"); test_knight_legal_squares();
+  std::printf("test_queen_attacked_squares: <=================================> \n"); test_queen_attacked_squares();
+  std::printf("test_queen_legal_squares: <=================================> \n"); test_queen_legal_squares();
+  std::printf("test_king_attacked_squares: <=================================> \n"); test_king_attacked_squares();
+  std::printf("test_king_legal_squares: <=================================> \n"); test_king_legal_squares();
+  
   return 0;
 }
