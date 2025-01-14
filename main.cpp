@@ -1019,15 +1019,198 @@ void test_pawn_board_update_after_measurment_start_with_two_squares(){
 }
 
 void test_knight_board_update_after_measurment(){
+  Board board{false};
+  board << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << black_piece(KING) << black_piece(KNIGHT)   << NO_PIECE << NO_PIECE;
 
+  std::array<uint16_t, n_squares> measurments{515,          515,              515,         515,
+                                              515,          515,        dummy_black,         515,
+                                              515,          515,                515,         515,
+                                              dummy_black,  515,                515,         515};
+  std::printf("expected: ===========\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| bK bN  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  auto error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O  bN  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| bK O   O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{dummy_black,515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              dummy_black,  515,              515  ,       515};
+                                              
+  board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| bN O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515,          515,              dummy_black,         515,
+                                              515,          515,              515,         515, 
+                                              515,          515,              515,         515,
+                                              dummy_black,          515,              515,         515};
+  board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("expected error: %s\n", error);};
+
+  // the board should still retain the board in the previous state
+  std::printf("expected: ===========\n");
+  std::printf("| bN O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
 }
 
 void test_rook_board_update_after_measurment(){
+  Board board{false};
+  board << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << black_piece(KING) << black_piece(ROOK)   << NO_PIECE << NO_PIECE;
 
+  std::array<uint16_t, n_squares> measurments{515,          dummy_black,        515,         515,
+                                              515,          515,                515,         515,
+                                              515,          515,                515,         515,
+                                              dummy_black,  515,                515,         515};
+  std::printf("expected: ===========\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| bK bR  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  auto error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O  bR  O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| bK O   O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{dummy_black,515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              dummy_black,  515,              515  ,       515};
+                                              
+  board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| bR O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515,          515,              515,         515,
+                                              515,          dummy_black,              515,         515, 
+                                              515,          515,              515,         515,
+                                              dummy_black,          515,              515,         515};
+  board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("expected error: %s\n", error);};
+
+  // the board should still retain the board in the previous state
+  std::printf("expected: ===========\n");
+  std::printf("| bR O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
 }
 
 void test_bishop_board_update_after_measurment(){
+  Board board{false};
+  board << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE << NO_PIECE
+        << black_piece(KING) << black_piece(BISHOP)   << NO_PIECE << NO_PIECE;
 
+  std::array<uint16_t, n_squares> measurments{515,          515,        515,         515,
+                                              515,          515,        515,         dummy_black,
+                                              515,          515,        515,         515,
+                                              dummy_black,  515,        515,         515};
+  std::printf("expected: ===========\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| O  O   O  O |\n");
+  std::printf("| bK bB  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  auto error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  bB |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515        ,515,      dummy_black,         515,
+                                                515,        515,              515,         515,
+                                                515,        515,              515,         515,
+                                              dummy_black,  515,              515  ,       515};
+                                              
+  board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O  O  bB O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515,         dummy_black,              515,         515,
+                                              515,               515,              515,         515, 
+                                              515,               515,              515,         515,
+                                              dummy_black,       515,              515,         515};
+  board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("expected error: %s\n", error);};
+
+  // the board should still retain the board in the previous state
+  std::printf("expected: ===========\n");
+  std::printf("| O  O  bB O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| O  O  O  O |\n");
+  std::printf("| bK O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
 }
 
 int main(){
@@ -1047,5 +1230,8 @@ int main(){
   std::printf("test_king_board_update_after_measurment: <=================================> \n"); test_king_board_update_after_measurment();
   std::printf("test_queen_board_update_after_measurment: <=================================> \n"); test_queen_board_update_after_measurment();
   std::printf("test_pawn_board_update_after_measurment_start_with_two_squares: <=================================> \n"); test_pawn_board_update_after_measurment_start_with_two_squares();
+  std::printf("test_knight_board_update_after_measurment: <=================================> \n"); test_knight_board_update_after_measurment();
+  std::printf("test_rook_board_update_after_measurment: <=================================> \n"); test_rook_board_update_after_measurment();
+  std::printf("test_bishop_board_update_after_measurment: <=================================> \n"); test_bishop_board_update_after_measurment();
   return 0;
 }

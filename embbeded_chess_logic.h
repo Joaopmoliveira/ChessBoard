@@ -50,8 +50,10 @@ unsigned char val[256][3];
 
 void fill_entry(square address, const char string[2])
 {
-  val[address & MASK_EXTERNAL_INFO][0] = string[0];
-  val[address & MASK_EXTERNAL_INFO][1] = string[1];
+  address &= MASK_EXTERNAL_INFO;
+  assert(address < 256);
+  val[address][0] = string[0];
+  val[address][1] = string[1];
 }
 
 inline square update_move(square p)
@@ -63,7 +65,9 @@ inline square update_move(square p)
 
 unsigned char *get_entry(square address)
 {
-  return val[address & MASK_EXTERNAL_INFO];
+  address &= MASK_EXTERNAL_INFO;
+  assert(address < 256);
+  return val[address];
 }
 
 void initialize_table()
@@ -94,7 +98,9 @@ struct coord
   coordinate col;
 
   coord() : row{-1}, col{-1} {}
-  coord(int in_row, int in_col) : row{in_row}, col{in_col} {}
+  coord(int in_row, int in_col) : row{in_row}, col{in_col} {
+    assert(row>=0 && col>=0);
+  }
 };
 
 inline coord convert(linear_array position)
@@ -178,8 +184,6 @@ void clear_en_passant_flags(std::array<square, n_squares> &raw_board)
       v ^= EN_PASSANT;
 }
 
-
-
 struct movement
 {
   uint_fast8_t number_of_moves;
@@ -195,8 +199,9 @@ struct movement
     filled_squares.fill(coord{});
   }
 
-  void check_and_store_changed_square(square in, linear_array pos)
+  void check_and_store_if_changed_square(square in, linear_array pos)
   {
+    assert(in);
     if(!has_piece(in) && has_detected_piece(in)){  // piece was to this previously empty square
       changed_squares[number_of_moves] = in;
       filled_squares[number_of_filled_squares] = convert(pos);
@@ -384,39 +389,26 @@ void fill_pawn_attack(coord location, std::array<square, n_squares> &raw_board)
 
 void fill_attacked_squares(coord location, std::array<square, n_squares> &raw_board)
 {
-  switch (MASK_PIECES & raw_board[convert(location)])
-  {
+  switch (MASK_PIECES & raw_board[convert(location)]){
   case PAWN:
-  {
     fill_pawn_attack(location, raw_board);
     break;
-  }
   case ROOK:
-  {
     fill_rook_move<ATTACKED_SQUARE>(location, raw_board);
     break;
-  }
   case BISHOP:
-  {
     fill_bishop_move<ATTACKED_SQUARE>(location, raw_board);
     break;
-  }
   case KNIGHT:
-  {
     fill_king_move<ATTACKED_SQUARE>(location, raw_board);
     break;
-  }
   case QUEEN:
-  {
     fill_rook_move<ATTACKED_SQUARE>(location, raw_board);
     fill_bishop_move<ATTACKED_SQUARE>(location, raw_board);
     break;
-  }
   case KING:
-  {
     fill_king_move<ATTACKED_SQUARE>(location, raw_board);
     break;
-  }
   case NO_PIECE:
   default:
     break;
@@ -425,39 +417,26 @@ void fill_attacked_squares(coord location, std::array<square, n_squares> &raw_bo
 
 void fill_allowed_moves(coord location, std::array<square, n_squares> &raw_board)
 {
-  switch (MASK_PIECES & raw_board[convert(location)])
-  {
+  switch (MASK_PIECES & raw_board[convert(location)]){
   case PAWN:
-  {
     fill_pawn_move(location, raw_board);
     break;
-  }
   case ROOK:
-  {
     fill_rook_move<LEGAL_SQUARE>(location, raw_board);
     break;
-  }
   case BISHOP:
-  {
     fill_bishop_move<LEGAL_SQUARE>(location, raw_board);
     break;
-  }
   case KNIGHT:
-  {
     fill_king_move<LEGAL_SQUARE>(location, raw_board);
     break;
-  }
   case QUEEN:
-  {
     fill_rook_move<LEGAL_SQUARE>(location, raw_board);
     fill_bishop_move<LEGAL_SQUARE>(location, raw_board);
     break;
-  }
   case KING:
-  {
     fill_king_move<LEGAL_SQUARE>(location, raw_board);
     break;
-  }
   case NO_PIECE:
   default:
     break;
@@ -469,7 +448,7 @@ movement find_movement(const std::array<square, n_squares> &board_state)
   movement detected_movements{};
   for (linear_array pos = 0; pos < n_squares; ++pos)
     if (board_state[pos])
-      detected_movements.check_and_store_changed_square(board_state[pos], pos);
+      detected_movements.check_and_store_if_changed_square(board_state[pos], pos);
   return detected_movements;
 }
 
@@ -635,6 +614,7 @@ struct Board
 
   Board &operator<<(square type)
   {
+     // this means that when we fill the board, at a later point in time we can refill it with a known initial position
     m_board[offset % n_squares] = type;
     ++offset;
     return *this;
