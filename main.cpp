@@ -1213,7 +1213,20 @@ void test_bishop_board_update_after_measurment(){
   std::cout << board << std::endl;
 }
 
+std::array<uint16_t, n_squares> move_piece(const Board& board, square in){
+  std::array<uint16_t, n_squares> measurments{515};
+  for(linear_array pos = 0; pos < n_squares; ++pos){
 
+  }
+}
+
+void simulate_tiny_game(){
+  Board board{false};
+  board << white_piece(KING) << white_piece(ROOK)     << white_piece(PAWN) << white_piece(BISHOP)
+        << NO_PIECE          << NO_PIECE              << NO_PIECE          << NO_PIECE
+        << NO_PIECE          << NO_PIECE              << NO_PIECE          << NO_PIECE
+        << black_piece(KING) << black_piece(ROOK)     << black_piece(PAWN) << black_piece(BISHOP);
+}
 
 int main(){
   std::printf("test_white_piece_measurment_detection: <=================================> \n"); test_white_piece_measurment_detection();
