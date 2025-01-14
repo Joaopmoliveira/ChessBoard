@@ -2,8 +2,9 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
+#include <cassert>
 
-using linear_array = uint8_t;
+using linear_array = uint_fast8_t;
 using coordinate = int;
 using square = uint_fast16_t;
 
@@ -671,7 +672,10 @@ struct Board
   std::array<square, n_squares> m_board;
   size_t offset = 0;
   bool white_turn = true;
-
+  
+  /*
+  each function inside the update must be tested to the limit so that things are correct
+  */
   [[nodiscard]] const char *update(const std::array<uint16_t, n_squares> &measurments)
   {
     clear_and_update_detection(m_board,measurments);
@@ -937,31 +941,371 @@ void test_rook_legal_squares(){
 }
 
 void test_bishop_attacked_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(BISHOP) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_bishop_move<ATTACKED_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| X O X O |\n");
+  std::printf("| O O O X |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(BISHOP);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_bishop_move<ATTACKED_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O O O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
 }
 
 void test_bishop_legal_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(BISHOP) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_bishop_move<LEGAL_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| X O X O |\n");
+  std::printf("| O O O X |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(BISHOP);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_bishop_move<LEGAL_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O O O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
 }
 
 void test_knight_attacked_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(KNIGHT) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_knight_move<ATTACKED_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O X |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O X |\n");
+  std::printf("| X O X O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(KNIGHT);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_knight_move<ATTACKED_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
 }
 
 void test_knight_legal_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(KNIGHT) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_knight_move<LEGAL_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O X |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O X |\n");
+  std::printf("| X O X O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(KNIGHT);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_knight_move<LEGAL_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
 }
 
 void test_queen_attacked_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(QUEEN) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_rook_move<ATTACKED_SQUARE>({1, 1}, board.m_board);
+  fill_bishop_move<ATTACKED_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X X X O |\n");
+  std::printf("| X O X X |\n");
+  std::printf("| X X X O |\n");
+  std::printf("| O X O X |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(QUEEN);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_rook_move<ATTACKED_SQUARE>({3, 3}, board.m_board);
+  fill_bishop_move<ATTACKED_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O O X |\n");
+  std::printf("| O X O X |\n");
+  std::printf("| O O X X |\n");
+  std::printf("| X X X O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
 }
 
 void test_queen_legal_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(QUEEN) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_rook_move<LEGAL_SQUARE>({1, 1}, board.m_board);
+  fill_bishop_move<LEGAL_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X X X O |\n");
+  std::printf("| X O X X |\n");
+  std::printf("| X X X O |\n");
+  std::printf("| O X O X |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(QUEEN);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_rook_move<LEGAL_SQUARE>({3, 3}, board.m_board);
+  fill_bishop_move<LEGAL_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X O O X |\n");
+  std::printf("| O X O X |\n");
+  std::printf("| O O X X |\n");
+  std::printf("| X X X O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
 }
 
 void test_king_attacked_squares(){
-
+  
 }
 
 void test_king_move_squares(){
@@ -1000,12 +1344,15 @@ void test_bishop_board_update_after_measurment(){
 
 }
 
-int main()
-{
-  std::printf("test_white_piece_measurment_detection: <------------> \n"); test_white_piece_measurment_detection();
-  std::printf("test_black_piece_measurment_detection: <------------> \n"); test_black_piece_measurment_detection();
-  std::printf("test_piece_measurment_detection: <------------> \n"); test_piece_measurment_detection();
-  std::printf("test_rook_attacked_squares: <------------> \n"); test_rook_attacked_squares();
-  std::printf("test_rook_legal_squares: <------------> \n"); test_rook_legal_squares();
+int main(){
+  std::printf("test_white_piece_measurment_detection: <---------------------------------> \n"); test_white_piece_measurment_detection();
+  std::printf("test_black_piece_measurment_detection: <---------------------------------> \n"); test_black_piece_measurment_detection();
+  std::printf("test_piece_measurment_detection: <---------------------------------> \n"); test_piece_measurment_detection();
+  std::printf("test_rook_attacked_squares: <---------------------------------> \n"); test_rook_attacked_squares();
+  std::printf("test_rook_legal_squares: <---------------------------------> \n"); test_rook_legal_squares();
+  std::printf("test_knight_attacked_squares: <---------------------------------> \n"); test_knight_attacked_squares();
+  std::printf("test_knight_legal_squares: <---------------------------------> \n"); test_knight_legal_squares();
+  std::printf("test_queen_attacked_squares: <---------------------------------> \n"); test_queen_attacked_squares();
+  std::printf("test_queen_legal_squares: <---------------------------------> \n"); test_queen_legal_squares();
   return 0;
 }
