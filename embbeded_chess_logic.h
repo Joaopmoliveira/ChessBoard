@@ -189,7 +189,11 @@ struct movement
   uint_fast8_t number_of_filled_squares;
   std::array<coord, 2> filled_squares;
 
-  movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of_filled_squares{0} {}
+  movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of_filled_squares{0} {
+    changed_squares.fill(NO_PIECE);
+    empty_squares.fill(coord{});
+    filled_squares.fill(coord{});
+  }
 
   void check_and_store_changed_square(square in, linear_array pos)
   {
@@ -345,16 +349,16 @@ void fill_pawn_move(coord location, std::array<square, n_squares> &raw_board)
   if (piece & FIRST)
   { // can jump two squares
     coord cord(location.row+offset*2, location.col);
-    if (!has_piece(raw_board[convert(cord)]))
+    if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]) )
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
     cord = coord(location.row+offset, location.col);
-    if (!has_piece(raw_board[convert(cord)]))
+    if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
   }
   else
   { // can jump one square
     coord cord(location.row+offset, location.col);
-    if (!has_piece(raw_board[convert(cord)]))
+    if (valid_coord(cord) && !has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
     // now we check for en passant
     cord = coord(location.row+offset, location.col-1);
