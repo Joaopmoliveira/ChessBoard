@@ -417,20 +417,23 @@ void fill_pawn_move(coord location, std::array<square, n_squares> &raw_board)
 
   if (piece & FIRST)
   { // can jump two squares
-    coord cord(location.row, location.col + offset * 2);
+    coord cord(location.row+offset*2, location.col);
+    if (!has_piece(raw_board[convert(cord)]))
+      mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
+    cord = coord(location.row+offset, location.col);
     if (!has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
   }
   else
   { // can jump one square
-    coord cord(location.row, location.col + offset);
+    coord cord(location.row+offset, location.col);
     if (!has_piece(raw_board[convert(cord)]))
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
     // now we check for en passant
-    cord = coord(location.row + 1, location.col + offset);
+    cord = coord(location.row+offset, location.col-1);
     if (valid_coord(cord) && raw_board[convert(cord)] & EN_PASSANT)
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
-    cord = coord(location.row - 1, location.col + offset);
+    cord = coord(location.row+offset, location.col + 1);
     if (valid_coord(cord) && raw_board[convert(cord)] & EN_PASSANT)
       mark_as<LEGAL_SQUARE>(raw_board[convert(cord)]);
   }
@@ -440,10 +443,10 @@ void fill_pawn_attack(coord location, std::array<square, n_squares> &raw_board)
 {
   auto piece = raw_board[convert(location)];
   coordinate offset = (piece & WHITE) ? 1 : -1;
-  coord cord(location.row + 1, location.col + offset);
+  coord cord(location.row +offset, location.col -1);
   if (valid_coord(cord))
     mark_as<ATTACKED_SQUARE>(raw_board[convert(cord)]);
-  cord = coord(location.row - 1, location.col + offset);
+  cord = coord(location.row+offset, location.col +1);
   if (valid_coord(cord))
     mark_as<ATTACKED_SQUARE>(raw_board[convert(cord)]);
 }
@@ -1425,14 +1428,172 @@ void test_king_legal_squares(){
 }
 
 void test_pawn_attacked_squares(){
+  Board board;
+  board << NO_PIECE << white_piece(PAWN) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_pawn_attack({0, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| X O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << black_piece(PAWN) << NO_PIECE; 
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_pawn_attack({3, 2}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O X O X |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
 }
 
 void test_pawn_move_squares(){
+  Board board;
+  board << NO_PIECE << white_piece(PAWN) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_pawn_move({0, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O X O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << black_piece(PAWN) << NO_PIECE; 
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_pawn_move({3, 2}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O O X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
 }
 
 void test_king_board_update_after_measurment(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(KING) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
+
+  
+
+  std::array<uint16_t, n_squares> measurments{515,          515,              dummy_black,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515};
+  std::printf("expected: ===========\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O bK O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  auto error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O  bK  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515,          515,              515,         dummy_black,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515};
+
+  error = board.update(measurments);
+  if(error) {std::printf("unexpected error: %s\n", error); return;};
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O  O  bK |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
 
 }
 
@@ -1468,6 +1629,8 @@ int main(){
   std::printf("test_queen_legal_squares: <=================================> \n"); test_queen_legal_squares();
   std::printf("test_king_attacked_squares: <=================================> \n"); test_king_attacked_squares();
   std::printf("test_king_legal_squares: <=================================> \n"); test_king_legal_squares();
-  
+  std::printf("test_pawn_attacked_squares: <=================================> \n"); test_pawn_attacked_squares();
+  std::printf("test_pawn_move_squares: <=================================> \n"); test_pawn_move_squares();
+  std::printf("test_king_board_update_after_measurment: <=================================> \n"); test_king_board_update_after_measurment();
   return 0;
 }
