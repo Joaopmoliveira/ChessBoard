@@ -581,7 +581,7 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   raw_board[convert(in.filled_squares[0])] = update_move(raw_board[convert(in.empty_squares[0])]);
   raw_board[convert(in.empty_squares[0])] = NO_PIECE;
   clear_en_passant_flags(raw_board);
-  if (raw_board[convert(in.filled_squares[0])] & PAWN && abs(in.empty_squares[0].col - in.filled_squares[0].col) == 0) // the pawn pushed two squares
+  if (raw_board[convert(in.filled_squares[0])] & PAWN && abs(in.empty_squares[0].col - in.filled_squares[0].col) == 2) // the pawn pushed two squares
   {
     coord en_passant_available{in.filled_squares[0].row, white_turn ? in.filled_squares[0].col - 1 : in.filled_squares[0].col + 1};
     raw_board[convert(en_passant_available)] &= EN_PASSANT;
