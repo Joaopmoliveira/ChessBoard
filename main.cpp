@@ -117,6 +117,7 @@ inline bool valid_coord(coord in)
 
 inline linear_array convert(coord coord)
 {
+  assert(coord.col>=0 && coord.row>=0);
   return coord.row * board_size + coord.col;
 }
 
@@ -249,6 +250,17 @@ void print_detected_black_piece_status(const std::array<square, n_squares> &raw_
   }
 }
 
+/*
+Example for Andre <------------------------------>
+*/
+std::vector<bool> generate_detected_black_piece_status(const std::array<square, n_squares> &raw_board){
+  std::vector<bool> result;
+  result.reserve(16);
+  for(const auto& v: raw_board)
+    result.push_back(v & DETECTED_BLACK_PIECE ? true : false);
+  return result;
+}
+
 void print_detected_white_piece_status(const std::array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
@@ -271,8 +283,15 @@ struct movement
 
   movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of_filled_squares{0} {}
 
-  void set_changed_square(square in, linear_array pos)
+  void check_and_store_changed_square(square in, linear_array pos)
   {
+    if(!has_piece(in) && has_detected_piece(in)){  // piece was to this previously empty square
+      changed_squares[number_of_moves] = in;
+      filled_squares[number_of_filled_squares] = convert(pos);
+      ++number_of_moves;
+      ++number_of_filled_squares;
+      return;
+    }
     if (has_piece(in) && !has_detected_piece(in)) // piece was moved from this square
     {
       changed_squares[number_of_moves] = in;
@@ -281,7 +300,7 @@ struct movement
       ++number_of_empty_squares;
       return;
     }
-    if (color_and_detected_color_match(in))
+    if (has_piece(in) && !color_and_detected_color_match(in)) // the square as always filled but the colors between the current piece and the new piece are incorrect
     {
       changed_squares[number_of_moves] = in;
       filled_squares[number_of_filled_squares] = convert(pos);
@@ -538,8 +557,7 @@ movement find_movement(const std::array<square, n_squares> &board_state)
   movement detected_movements{};
   for (linear_array pos = 0; pos < n_squares; ++pos)
     if (board_state[pos])
-      if (((has_piece(board_state[pos]) != has_detected_piece(board_state[pos])) || !color_and_detected_color_match(board_state[pos]))) // of  square on square changed
-        detected_movements.set_changed_square(board_state[pos], pos);
+      detected_movements.check_and_store_changed_square(board_state[pos], pos);
   return detected_movements;
 }
 
@@ -667,14 +685,14 @@ void clear_and_update_detection(std::array<square, n_squares>& m_board,const std
 
 struct Board
 {
-  Board()
+  Board(bool is_white_to_start_first = true) : white_turn{is_white_to_start_first}
   {
     initialize_table();
   }
 
   std::array<square, n_squares> m_board;
   size_t offset = 0;
-  bool white_turn = true;
+  bool white_turn;
   
   /*
   each function inside the update must be tested to the limit so that things are correct
@@ -723,6 +741,8 @@ std::ostream &operator<<(std::ostream &os, const Board &obj)
   return os;
 }
 
+#include <vector>
+
 /*
 Time to write tests that validate the logic of the game :
 1. validate legal logic of game
@@ -737,6 +757,7 @@ void test_white_piece_measurment_detection(){
         << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
         << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::vector<bool> expected{false,false,false,false};
   std::printf("expected: ===========\n");
   std::printf("| O O O O |\n");
   std::printf("| O O O O |\n");
@@ -1271,7 +1292,6 @@ void test_queen_legal_squares(){
   std::printf("code result: ===========\n");
   print_legal_status(board.m_board);
 
-
   clear_utility_flags(board.m_board);
 
   std::printf("expected: ===========\n");
@@ -1548,7 +1568,7 @@ void test_pawn_move_squares(){
 }
 
 void test_king_board_update_after_measurment(){
-  Board board;
+  Board board{false};
   board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
         << NO_PIECE << black_piece(KING) << NO_PIECE << NO_PIECE
         << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
@@ -1583,10 +1603,27 @@ void test_king_board_update_after_measurment(){
                                               515,          515,              515,         515,
                                               515,          515,              515,         515,
                                               515,          515,              515,         515};
-
+  board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
   error = board.update(measurments);
   if(error) {std::printf("unexpected error: %s\n", error); return;};
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O  O  bK |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("| O O  O  O |\n");
+  std::printf("code result: ===========\n");
+  std::cout << board << std::endl;
+
+  measurments = std::array<uint16_t, n_squares>{515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         515,
+                                              515,          515,              515,         dummy_black};
+  board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
+  error = board.update(measurments);
+  if(error) {std::printf("expected error: %s\n", error); return;};
+
+  // the board should still retain the board in the previous state
   std::printf("expected: ===========\n");
   std::printf("| O O  O  bK |\n");
   std::printf("| O O  O  O |\n");
