@@ -250,17 +250,6 @@ void print_detected_black_piece_status(const std::array<square, n_squares> &raw_
   }
 }
 
-/*
-Example for Andre <------------------------------>
-*/
-std::vector<bool> generate_detected_black_piece_status(const std::array<square, n_squares> &raw_board){
-  std::vector<bool> result;
-  result.reserve(16);
-  for(const auto& v: raw_board)
-    result.push_back(v & DETECTED_BLACK_PIECE ? true : false);
-  return result;
-}
-
 void print_detected_white_piece_status(const std::array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
