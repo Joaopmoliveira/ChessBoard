@@ -578,7 +578,7 @@ void clear_and_update_detection(std::array<square, n_squares>& m_board,const std
   clear_utility_flags(m_board);
   for (linear_array i = 0; i < n_squares; ++i)
     m_board[i] |= (measurments[i] > 550) ? DETECTED_BLACK_PIECE : (measurments[i] < 500) ? DETECTED_WHITE_PIECE
-                                                                                         : NO_PIECE;
+                                                                                         : NO_PIECE; // CHECK: I am still not sure this is correct
 }
 
 struct Board
@@ -611,7 +611,7 @@ struct Board
       error_msg = parse_casteling_movement(moved_piece, m_board, white_turn);
       break;
     default:
-      error_msg = board_errors[3];
+      error_msg = board_errors[TOO_MANY_MOVES];
       break;
     }
     white_turn = !white_turn;
