@@ -46,14 +46,14 @@ enum PieceTypes : square
   LEGAL_SQUARE = 2 << 12,         // 0001 0000 0000 0000
 };
 
-unsigned char val[256][3];
+unsigned char piece_names[256][3];
 
 void fill_entry(square address, const char string[2])
 {
   address &= MASK_EXTERNAL_INFO;
   assert(address < 256);
-  val[address][0] = string[0];
-  val[address][1] = string[1];
+  piece_names[address][0] = string[0];
+  piece_names[address][1] = string[1];
 }
 
 inline square update_move(square p)
@@ -67,14 +67,14 @@ unsigned char *get_entry(square address)
 {
   address &= MASK_EXTERNAL_INFO;
   assert(address < 256);
-  return val[address];
+  return piece_names[address];
 }
 
 void initialize_table()
 {
   for (size_t i = 0; i < 256; ++i)
     for (size_t j = 0; j < 3; ++j)
-      val[i][j] = '\0';
+      piece_names[i][j] = '\0';
   fill_entry(KING | WHITE, "wK");
   fill_entry(KING | BLACK, "bK");
   fill_entry(QUEEN | WHITE, "wQ");
