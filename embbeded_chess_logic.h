@@ -98,9 +98,7 @@ struct coord
   coordinate col;
 
   coord() : row{-1}, col{-1} {}
-  coord(int in_row, int in_col) : row{in_row}, col{in_col} {
-    assert(row>=0 && col>=0);
-  }
+  coord(int in_row, int in_col) : row{in_row}, col{in_col} {}
 };
 
 inline coord convert(linear_array position)

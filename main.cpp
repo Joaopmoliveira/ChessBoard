@@ -1215,9 +1215,7 @@ void test_bishop_board_update_after_measurment(){
 
 std::array<uint16_t, n_squares> move_piece(const Board& board, square in){
   std::array<uint16_t, n_squares> measurments{515};
-  for(linear_array pos = 0; pos < n_squares; ++pos){
-
-  }
+  return measurments;
 }
 
 void simulate_tiny_game(){
