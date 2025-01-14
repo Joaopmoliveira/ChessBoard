@@ -1213,6 +1213,8 @@ void test_bishop_board_update_after_measurment(){
   std::cout << board << std::endl;
 }
 
+
+
 int main(){
   std::printf("test_white_piece_measurment_detection: <=================================> \n"); test_white_piece_measurment_detection();
   std::printf("test_black_piece_measurment_detection: <=================================> \n"); test_black_piece_measurment_detection();

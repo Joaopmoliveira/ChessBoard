@@ -443,8 +443,7 @@ void fill_allowed_moves(coord location, std::array<square, n_squares> &raw_board
   }
 };
 
-movement find_movement(const std::array<square, n_squares> &board_state)
-{
+movement find_movement(const std::array<square, n_squares> &board_state){
   movement detected_movements{};
   for (linear_array pos = 0; pos < n_squares; ++pos)
     if (board_state[pos])
@@ -452,6 +451,14 @@ movement find_movement(const std::array<square, n_squares> &board_state)
   return detected_movements;
 }
 
+enum error_code {
+    KING_NOT_DETECTED = 0,
+    ILLEGAL_MOVE = 1,
+    PINNED_PIECE = 2,
+    TOO_MANY_MOVES = 3,
+    CASTELING_DISSALOWED = 4,
+    INVALID_EN_PASSANT = 5
+};
 const char *board_errors[] = {"king not detected", "ilegal move", "king in check", "unexpected number moves", "casteling not allowed", "inconsistent en passant"};
 
 [[nodiscard]] const char *parse_moved_or_eaten_movement(movement in, std::array<square, n_squares> &raw_board, bool white_turn)
@@ -462,7 +469,7 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   if (!is_marked_as<LEGAL_SQUARE>(board_after_move[convert(in.filled_squares[0])]))
   {
     // the move is not on the list of allowed moves, no can do cowboy
-    return board_errors[1];
+    return board_errors[ILLEGAL_MOVE];
   }
   // the move is legal without checks.. now we check if the the king is attacked after the move
   board_after_move[convert(in.filled_squares[0])] = update_move(board_after_move[convert(in.empty_squares[0])]);
@@ -486,10 +493,10 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
     }
   }
   if (our_king_location < 0)
-    return board_errors[0];
+    return board_errors[KING_NOT_DETECTED];
 
   if (is_marked_as<ATTACKED_SQUARE>(board_after_move[our_king_location])) // we moved the king to this position yet its attacked by other pieces, no can do cowboy
-    return board_errors[2];
+    return board_errors[PINNED_PIECE];
 
   raw_board[convert(in.filled_squares[0])] = update_move(raw_board[convert(in.empty_squares[0])]);
   raw_board[convert(in.empty_squares[0])] = NO_PIECE;
@@ -509,7 +516,7 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
 
   // check that cleared squares are side by side and belong to distinct colors
   if (!(abs(in.empty_squares[1].col - in.empty_squares[0].col) == 1) || in.empty_squares[1].row != in.empty_squares[0].row)
-    return board_errors[5];
+    return board_errors[INVALID_EN_PASSANT];
 
   bool address_zero_to_use = true;
 
@@ -524,7 +531,7 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   if (!is_marked_as<LEGAL_SQUARE>(board_after_move[convert(in.filled_squares[0])]))
   {
     // the move is not on the list of allowed moves, no can do cowboy
-    return board_errors[1];
+    return board_errors[ILLEGAL_MOVE];
   }
   board_after_move[convert(in.filled_squares[0])] = update_move(address_zero_to_use ? board_after_move[convert(in.empty_squares[0])] : board_after_move[convert(in.empty_squares[1])]);
   board_after_move[convert(in.empty_squares[0])] = NO_PIECE;
@@ -549,10 +556,10 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
     }
   }
   if (our_king_location < 0)
-    return board_errors[0];
+    return board_errors[KING_NOT_DETECTED];
 
   if (is_marked_as<ATTACKED_SQUARE>(board_after_move[our_king_location])) // we moved the king to this position yet its attacked by other pieces, no can do cowboy
-    return board_errors[2];
+    return board_errors[PINNED_PIECE];
 
   raw_board[convert(in.filled_squares[0])] = update_move(address_zero_to_use ? raw_board[convert(in.empty_squares[0])] : raw_board[convert(in.empty_squares[1])]);
   raw_board[convert(in.empty_squares[0])] = NO_PIECE;
@@ -593,8 +600,7 @@ struct Board
     clear_and_update_detection(m_board,measurments);
     movement moved_piece = find_movement(m_board);
     const char *error_msg = nullptr;
-    switch (moved_piece.number_of_moves)
-    {
+    switch (moved_piece.number_of_moves){
     case 2:
       error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, white_turn);
       break;
