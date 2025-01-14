@@ -1305,11 +1305,123 @@ void test_queen_legal_squares(){
 }
 
 void test_king_attacked_squares(){
-  
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(KING) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_king_move<ATTACKED_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X X X O |\n");
+  std::printf("| X O X O |\n");
+  std::printf("| X X X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(KING);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
+
+  fill_king_move<ATTACKED_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O X X |\n");
+  std::printf("| O O X O |\n");
+  std::printf("code result: ===========\n");
+  print_attacked_status(board.m_board);
 }
 
 void test_king_move_squares(){
+  Board board;
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << black_piece(KING) << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE;
 
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_king_move<LEGAL_SQUARE>({1, 1}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| X X X O |\n");
+  std::printf("| X O X O |\n");
+  std::printf("| X X X O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+
+  clear_utility_flags(board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  board << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE
+        << NO_PIECE << NO_PIECE << NO_PIECE << black_piece(KING);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
+
+  fill_king_move<LEGAL_SQUARE>({3, 3}, board.m_board);
+
+  std::printf("expected: ===========\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O O O |\n");
+  std::printf("| O O X X |\n");
+  std::printf("| O O X O |\n");
+  std::printf("code result: ===========\n");
+  print_legal_status(board.m_board);
 }
 
 void test_pawn_attacked_squares(){
