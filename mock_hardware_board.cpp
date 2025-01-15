@@ -1,4 +1,6 @@
 #include "test_utilities.h"
+#include <utility>
+#include <chrono>
 
 /*
 Time to write tests that validate the logic of the game :
@@ -1213,17 +1215,82 @@ void test_bishop_board_update_after_measurment(){
   std::cout << board << std::endl;
 }
 
-std::array<uint16_t, n_squares> move_piece(const Board& board, square in){
+struct requested_moves{
+      square piece_to_move;
+      coord relative;
+};
+
+
+
+std::array<uint16_t, n_squares> find_and_move_piece(std::array<square,n_squares> raw_board, requested_moves to_move){
   std::array<uint16_t, n_squares> measurments{515};
+  coord piece_to_move{};
+  for(linear_array pos = 0; pos < n_squares; ++pos)
+      if( has_piece(raw_board[pos]) && ((MASK_PIECES & raw_board[pos])== (MASK_PIECES & to_move.piece_to_move)) && same_colors(raw_board[pos],to_move.piece_to_move)){
+            piece_to_move = convert(pos); 
+            break;
+      }
+  coord final_position = coord(piece_to_move.row+to_move.relative.row,piece_to_move.col+to_move.relative.col);
+  raw_board[convert(final_position)] = update_move(raw_board[convert(piece_to_move)]);
+  raw_board[convert(piece_to_move)] = NO_PIECE;
+  for(linear_array pos = 0; pos < n_squares; ++pos){
+      if(!has_piece(raw_board[pos])){
+            measurments[pos] =  515;
+            continue;
+      }
+      if(raw_board[pos] & BLACK){
+            measurments[pos] =  dummy_black;
+            continue;
+      } else if(raw_board[pos] & WHITE){
+            measurments[pos] =  dummy_white;
+            continue;
+      }
+      
+      throw std::runtime_error("should not");
+  }
   return measurments;
 }
 
+const char* expected_boards[] = {"| wK wR wB wP |\n| O  O  O  O|\n| O  O  O  O |\n| bK bR bB bP |",
+                                 "| wK O  wB wP |\n| O  O  O  O|\n| O  O  O  O |\n| bK wR bB bP |",
+                                 "| wK O  wB wP |\n| O  O  O  O|\n| O  O  O  O |\n| O  bK bB bP |",
+                                 "| wK O  wB  O |\n| O  O  O  O|\n| O  O  O wP |\n| O  bK bB bP |",
+                                 "| wK O  wB  O |\n| O  O  O  O|\n| O  O  O bB |\n| O  bK  O bP |"};
+
+
+template<bool print>
 void simulate_tiny_game(){
-  Board board{false};
-  board << white_piece(KING) << white_piece(ROOK)     << white_piece(PAWN) << white_piece(BISHOP)
+
+  requested_moves moves_to_execute[] = {{ROOK|WHITE,{3,0}},{KING|BLACK,{0,1}},{PAWN|WHITE,{2,0}},{BISHOP|BLACK,{-1,1}}};
+  Board board{};
+  board << white_piece(KING) << white_piece(ROOK)     << white_piece(BISHOP) << white_piece(PAWN)
         << NO_PIECE          << NO_PIECE              << NO_PIECE          << NO_PIECE
         << NO_PIECE          << NO_PIECE              << NO_PIECE          << NO_PIECE
-        << black_piece(KING) << black_piece(ROOK)     << black_piece(PAWN) << black_piece(BISHOP);
+        << black_piece(KING) << black_piece(ROOK)     << black_piece(BISHOP) << black_piece(PAWN);
+
+  std::vector<size_t> durations;
+  for(int i = 0; i < sizeof(moves_to_execute)/sizeof(requested_moves); ++i){
+      if constexpr(print){
+            std::printf("\nexpected state :\n%s",expected_boards[i]);
+            std::printf("\ncode result:\n"); std::cout << board << std::endl;
+      }
+      auto measurments = find_and_move_piece(board.m_board,moves_to_execute[i]);
+      std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+      auto msg = board.update(measurments);
+      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+      durations.push_back(std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count());
+      if constexpr(print){
+      if(msg){
+            std::printf("detected unexpected error!!!! msg: %s\n",msg);
+      }
+      }
+  }
+        if constexpr(print){
+            std::printf("\nexpected state :\n%s",expected_boards[3]);
+            std::printf("\ncode result:\n"); std::cout << board << std::endl;
+        }
+  for(const auto& timing : durations )
+      std::cout << "Time difference = " << timing << "[ns]" << std::endl;
 }
 
 int main(){
@@ -1246,5 +1313,14 @@ int main(){
   std::printf("test_knight_board_update_after_measurment: <=================================> \n"); test_knight_board_update_after_measurment();
   std::printf("test_rook_board_update_after_measurment: <=================================> \n"); test_rook_board_update_after_measurment();
   std::printf("test_bishop_board_update_after_measurment: <=================================> \n"); test_bishop_board_update_after_measurment();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<true>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
+  std::printf("simulate_tiny_game: <=================================> \n"); simulate_tiny_game<false>();
   return 0;
 }

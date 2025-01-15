@@ -8,4 +8,4 @@ if(WIN32)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif(WIN32)
 
-add_executable(chesslogic main.cpp)
+add_executable(chesslogic mock_hardware_board.cpp)
