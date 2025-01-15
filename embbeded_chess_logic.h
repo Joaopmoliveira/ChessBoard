@@ -33,12 +33,12 @@ enum PieceTypes : square
   KNIGHT = 2 << 4, // 0000 0000 0010 0000
   QUEEN = 2 << 5,  // 0000 0000 0100 0000
   KING = 2 << 6,   // 0000 0000 1000 0000
-  MASK_EXTERNAL_INFO = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING,
-  MASK_PIECES = PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING,
+  MASK_EXTERNAL_INFO = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING, // 0000 0000 1111 1111
+  MASK_PIECES = PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING, // 0000 0000 1111 1100
   // < ----- special move flags ------- >
   EN_PASSANT = 2 << 7, // 0000 0001 0000 0000
   FIRST = 2 << 8,      // 0000 0010 0000 0000
-  MASK_NON_UTILITIES = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST,
+  MASK_NON_UTILITIES = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST, // 0000 0011 1111 1111
   // < ----- utility flags ------- >
   DETECTED_BLACK_PIECE = 2 << 9,  // 0000 0010 0000 0000
   DETECTED_WHITE_PIECE = 2 << 10, // 0000 0100 0000 0000
@@ -606,9 +606,7 @@ struct Board
   bool white_turn;
 
   /*
-  Each function inside the update must be 
-  tested to the limit so that things are 
-  correct
+  each function inside the update must be tested to the limit so that things are correct
   */
   [[nodiscard]] const char *update(const std::array<uint16_t, n_squares> &measurments)
   {
@@ -634,9 +632,9 @@ struct Board
     return error_msg;
   }
 
-  void map_to(std::array<unsigned char,17>& dst){
-    for(size_t i = 1; i < dst.size(); ++i)
-      dst[i] = MASK_EXTERNAL_INFO & m_board[i-1];
+  void map_to(std::array<unsigned char,16>& dst){
+    for(size_t i = 0; i < dst.size(); ++i)
+      dst[i] = MASK_EXTERNAL_INFO & m_board[i];
   }
 
   Board &operator<<(square type)
@@ -647,87 +645,3 @@ struct Board
     return *this;
   }
 };
-
-
-uint8_t s0 = 7; // 38 - 7
-uint8_t s1 = 6; // 35 - 6
-uint8_t s2 = 5; // 34 - 5
-uint8_t s3 = 4; // 27 - 4
-
-uint8_t controlPin[] = {s0, s1, s2, s3};
-
-uint8_t SIG_pin = A0;
-
-std::array<uint8_t,17> board_status;
-std::array<uint16_t,16> measurments;
-
-inline uint16_t readMux(int channel)
-{
-    uint8_t muxChannel[16][4] = {
-        {0, 0, 0, 0}, // channel 0
-        {1, 0, 0, 0}, // channel 1
-        {0, 1, 0, 0}, // channel 2
-        {1, 1, 0, 0}, // channel 3
-        {0, 0, 1, 0}, // channel 4
-        {1, 0, 1, 0}, // channel 5
-        {0, 1, 1, 0}, // channel 6
-        {1, 1, 1, 0}, // channel 7
-        {0, 0, 0, 1}, // channel 8
-        {1, 0, 0, 1}, // channel 9
-        {0, 1, 0, 1}, // channel 10
-        {1, 1, 0, 1}, // channel 11
-        {0, 0, 1, 1}, // channel 12
-        {1, 0, 1, 1}, // channel 13
-        {0, 1, 1, 1}, // channel 14
-        {1, 1, 1, 1}  // channel 15
-    };
-
-    digitalWrite(controlPin[0], muxChannel[channel][0]);
-    digitalWrite(controlPin[1], muxChannel[channel][1]);
-    digitalWrite(controlPin[2], muxChannel[channel][2]);
-    digitalWrite(controlPin[3], muxChannel[channel][3]);
-
-    return analogRead(SIG_pin);
-}
-
-Board board;
-
-void setup()
-{
-    pinMode(s0, OUTPUT);
-    pinMode(s1, OUTPUT);
-    pinMode(s2, OUTPUT);
-    pinMode(s3, OUTPUT);
-
-    digitalWrite(s0, LOW);
-    digitalWrite(s1, LOW);
-    digitalWrite(s2, LOW);
-    digitalWrite(s3, LOW);
-
-    board_status[0] = 65535;
-
-    board << white_piece(KING) << white_piece(ROOK)     << white_piece(BISHOP) << white_piece(PAWN)
-          << NO_PIECE          << NO_PIECE              << NO_PIECE            << NO_PIECE
-          << NO_PIECE          << NO_PIECE              << NO_PIECE            << NO_PIECE
-          << black_piece(KING) << black_piece(ROOK)     << black_piece(BISHOP) << black_piece(PAWN);
-
-    Serial.begin(9600);
-}
-
-void loop()
-{
-    for (uint8_t chanel = 0; chanel < measurments.size(); ++chanel)
-        measurments[chanel] = readMux(chanel);
-    
-    board.update(measurments);
-    
-    char buffer;
-    auto val = Serial.readBytes(&buffer, 1);
-    if (!val)
-        return;
-        
-    if (buffer == 'r'){
-        board.map_to(board_status);
-        Serial.write((unsigned char *)board_status.data(), board_status.size());
-    }
-}
