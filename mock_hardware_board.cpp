@@ -1,6 +1,16 @@
 #include "test_utilities.h"
 #include <utility>
 #include <chrono>
+#include <array>
+
+template<typename T,unsigned int s>
+array<T,s> convert_array(std::array<T,s> in){
+      array<T,s> local;
+      for(size_t i = 0; i < s; ++i){
+            local[i] = in[i]; 
+      }
+      return local;
+}
 
 /*
 Time to write tests that validate the logic of the game :
@@ -31,7 +41,7 @@ void test_white_piece_measurment_detection()
                                                   dummy_white, dummy_white, 515, dummy_white,
                                                   515, 515, dummy_black, 515};
 
-      clear_and_update_detection(board.m_board, measurments);
+      clear_and_update_detection(board.m_board, convert_array<uint16_t, n_squares>(measurments));
 
       std::printf("expected: ===========\n");
       std::printf("| X O O X |\n");
@@ -65,7 +75,7 @@ void test_black_piece_measurment_detection()
                                                   dummy_white, dummy_white, 515, dummy_white,
                                                   515, 515, dummy_black, 515};
 
-      clear_and_update_detection(board.m_board, measurments);
+      clear_and_update_detection(board.m_board, convert_array<uint16_t, n_squares>(measurments));
 
       std::printf("expected: ===========\n");
       std::printf("| O O O O |\n");
@@ -99,7 +109,7 @@ void test_piece_measurment_detection()
                                                   dummy_white, dummy_white, 515, dummy_white,
                                                   515, 515, dummy_black, 515};
 
-      clear_and_update_detection(board.m_board, measurments);
+      clear_and_update_detection(board.m_board, convert_array<uint16_t, n_squares>(measurments));
 
       std::printf("expected: ===========\n");
       std::printf("| X O O X |\n");
@@ -855,7 +865,7 @@ void test_king_board_update_after_measurment()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -876,7 +886,7 @@ void test_king_board_update_after_measurment()
                                                     515, 515, 515, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -896,7 +906,7 @@ void test_king_board_update_after_measurment()
                                                     515, 515, 515, 515,
                                                     515, 515, 515, dummy_black};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -932,7 +942,7 @@ void test_queen_board_update_after_measurment()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -953,7 +963,7 @@ void test_queen_board_update_after_measurment()
                                                     515, 515, dummy_black, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -973,7 +983,7 @@ void test_queen_board_update_after_measurment()
                                                     515, 515, 515, 515,
                                                     515, 515, 515, 515};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -1009,7 +1019,7 @@ void test_pawn_board_update_after_measurment_start_with_two_squares()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1030,7 +1040,7 @@ void test_pawn_board_update_after_measurment_start_with_two_squares()
                                                     dummy_black, 515, 515, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1050,7 +1060,7 @@ void test_pawn_board_update_after_measurment_start_with_two_squares()
                                                     515, 515, 515, 515,
                                                     dummy_black, 515, 515, 515};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -1086,7 +1096,7 @@ void test_knight_board_update_after_measurment()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1107,7 +1117,7 @@ void test_knight_board_update_after_measurment()
                                                     dummy_black, 515, 515, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1127,7 +1137,7 @@ void test_knight_board_update_after_measurment()
                                                     515, 515, 515, 515,
                                                     dummy_black, 515, 515, 515};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -1163,7 +1173,7 @@ void test_rook_board_update_after_measurment()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1184,7 +1194,7 @@ void test_rook_board_update_after_measurment()
                                                     dummy_black, 515, 515, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1204,7 +1214,7 @@ void test_rook_board_update_after_measurment()
                                                     515, 515, 515, 515,
                                                     dummy_black, 515, 515, 515};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -1240,7 +1250,7 @@ void test_bishop_board_update_after_measurment()
       std::printf("code result: ===========\n");
       std::cout << board << std::endl;
 
-      auto error = board.update(measurments);
+      auto error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1261,7 +1271,7 @@ void test_bishop_board_update_after_measurment()
                                                     dummy_black, 515, 515, 515};
 
       board.white_turn = false; // we allow black to move twice in a row... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("unexpected error: %s\n", error);
@@ -1281,7 +1291,7 @@ void test_bishop_board_update_after_measurment()
                                                     515, 515, 515, 515,
                                                     dummy_black, 515, 515, 515};
       board.white_turn = false; // we allow black to move trice... this is actually illegal but for now it allows us to check stuff
-      error = board.update(measurments);
+      error = board.update(convert_array<uint16_t, n_squares>(measurments));
       if (error)
       {
             std::printf("expected error: %s\n", error);
@@ -1303,9 +1313,10 @@ struct requested_moves
       coord relative;
 };
 
-std::array<uint16_t, n_squares> find_and_move_piece(std::array<square, n_squares> raw_board, requested_moves to_move)
+array<uint16_t, n_squares> find_and_move_piece(array<square, n_squares> raw_board, requested_moves to_move)
 {
-      std::array<uint16_t, n_squares> measurments{515};
+      array<uint16_t, n_squares> measurments{};
+      measurments.fill(515);
       coord piece_to_move{};
       for (linear_array pos = 0; pos < n_squares; ++pos)
             if (has_piece(raw_board[pos]) && ((MASK_PIECES & raw_board[pos]) == (MASK_PIECES & to_move.piece_to_move)) && same_colors(raw_board[pos], to_move.piece_to_move))
@@ -1323,12 +1334,12 @@ std::array<uint16_t, n_squares> find_and_move_piece(std::array<square, n_squares
                   measurments[pos] = 515;
                   continue;
             }
-            if (raw_board[pos] & BLACK)
+            if (raw_board[pos] & BLACK_PIECE)
             {
                   measurments[pos] = dummy_black;
                   continue;
             }
-            else if (raw_board[pos] & WHITE)
+            else if (raw_board[pos] & WHITE_PIECE)
             {
                   measurments[pos] = dummy_white;
                   continue;
@@ -1349,7 +1360,7 @@ template <bool print>
 void simulate_tiny_game()
 {
 
-      requested_moves moves_to_execute[] = {{ROOK | WHITE, {3, 0}}, {KING | BLACK, {0, 1}}, {PAWN | WHITE, {2, 0}}, {BISHOP | BLACK, {-1, 1}}};
+      requested_moves moves_to_execute[] = {{ROOK | WHITE_PIECE, {3, 0}}, {KING | BLACK_PIECE, {0, 1}}, {PAWN | WHITE_PIECE, {2, 0}}, {BISHOP | BLACK_PIECE, {-1, 1}}};
       Board board{};
       board << white_piece(KING) << white_piece(ROOK) << white_piece(BISHOP) << white_piece(PAWN)
             << NO_PIECE << NO_PIECE << NO_PIECE << NO_PIECE

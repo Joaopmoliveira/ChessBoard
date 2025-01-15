@@ -1,9 +1,10 @@
 #include "embbeded_chess_logic.h"
+#include <iostream>
 
 constexpr uint16_t dummy_black = 560;
 constexpr uint16_t dummy_white = 490;
 
-void print_attacked_status(const std::array<square, n_squares> &raw_board)
+void print_attacked_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -14,7 +15,7 @@ void print_attacked_status(const std::array<square, n_squares> &raw_board)
   }
 }
 
-void print_legal_status(const std::array<square, n_squares> &raw_board)
+void print_legal_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -25,7 +26,7 @@ void print_legal_status(const std::array<square, n_squares> &raw_board)
   }
 }
 
-void print_enpassant_status(const std::array<square, n_squares> &raw_board)
+void print_enpassant_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -36,7 +37,7 @@ void print_enpassant_status(const std::array<square, n_squares> &raw_board)
   }
 }
 
-void print_first_status(const std::array<square, n_squares> &raw_board)
+void print_first_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -47,7 +48,7 @@ void print_first_status(const std::array<square, n_squares> &raw_board)
   }
 }
 
-void print_detected_piece_status(const std::array<square, n_squares> &raw_board)
+void print_detected_piece_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -58,7 +59,7 @@ void print_detected_piece_status(const std::array<square, n_squares> &raw_board)
   }
 }
 
-void print_detected_black_piece_status(const std::array<square, n_squares> &raw_board)
+void print_detected_black_piece_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {
@@ -69,7 +70,7 @@ void print_detected_black_piece_status(const std::array<square, n_squares> &raw_
   }
 }
 
-void print_detected_white_piece_status(const std::array<square, n_squares> &raw_board)
+void print_detected_white_piece_status(const array<square, n_squares> &raw_board)
 {
   for (int row = 0; row < board_size; ++row)
   {

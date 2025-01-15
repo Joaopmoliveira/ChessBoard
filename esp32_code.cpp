@@ -1,7 +1,8 @@
 #include <array>
 #include <cstdint>
 #include <bitset>
-#include <cassert>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 using linear_array = uint_fast8_t;
 using coordinate = int;
@@ -12,7 +13,7 @@ constexpr linear_array n_squares = board_size * board_size;
 
 /*
 [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16] bits in byte
-1 bit - flags the color is white
+1 bit - flags the color is WHITE_PIECE
 2 bit - flags the color is black
 3 bit - flags if its pawn
 4 bit - flags if its rook
@@ -24,23 +25,23 @@ constexpr linear_array n_squares = board_size * board_size;
 enum PieceTypes : square
 {
   NO_PIECE = 0,    // 0000 0000 0000 0000
-  WHITE = 1,       // 0000 0000 0000 0001
-  BLACK = 2 << 0,  // 0000 0000 0000 0010
+  WHITE_PIECE = 1,       // 0000 0000 0000 0001
+  BLACK_PIECE= 2 << 0,  // 0000 0000 0000 0010
   PAWN = 2 << 1,   // 0000 0000 0000 0100
   ROOK = 2 << 2,   // 0000 0000 0000 1000
   BISHOP = 2 << 3, // 0000 0000 0001 0000
   KNIGHT = 2 << 4, // 0000 0000 0010 0000
   QUEEN = 2 << 5,  // 0000 0000 0100 0000
   KING = 2 << 6,   // 0000 0000 1000 0000
-  MASK_EXTERNAL_INFO = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING, // 0000 0000 1111 1111
+  MASK_EXTERNAL_INFO = WHITE_PIECE | BLACK_PIECE| PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING, // 0000 0000 1111 1111
   MASK_PIECES = PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING, // 0000 0000 1111 1100
   // < ----- special move flags ------- >
   EN_PASSANT = 2 << 7, // 0000 0001 0000 0000
   FIRST = 2 << 8,      // 0000 0010 0000 0000
-  MASK_NON_UTILITIES = WHITE | BLACK | PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST, // 0000 0011 1111 1111
+  MASK_NON_UTILITIES = WHITE_PIECE | BLACK_PIECE| PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST, // 0000 0011 1111 1111
   // < ----- utility flags ------- >
   DETECTED_BLACK_PIECE = 2 << 9,  // 0000 0010 0000 0000
-  DETECTED_WHITE_PIECE = 2 << 10, // 0000 0100 0000 0000
+  DETECTED_WHITE_PIECE_PIECE = 2 << 10, // 0000 0100 0000 0000
   ATTACKED_SQUARE = 2 << 11,      // 0000 1000 0000 0000
   LEGAL_SQUARE = 2 << 12,         // 0001 0000 0000 0000
 };
@@ -101,21 +102,21 @@ void initialize_table()
   for (size_t i = 0; i < 256; ++i)
     for (size_t j = 0; j < 3; ++j)
       piece_names[i][j] = '\0';
-  fill_entry(KING | WHITE, "wK");
-  fill_entry(KING | BLACK, "bK");
-  fill_entry(QUEEN | WHITE, "wQ");
-  fill_entry(QUEEN | BLACK, "bQ");
-  fill_entry(KNIGHT | WHITE, "wN");
-  fill_entry(KNIGHT | BLACK, "bN");
-  fill_entry(BISHOP | WHITE, "wB");
-  fill_entry(BISHOP | BLACK, "bB");
-  fill_entry(ROOK | WHITE, "wR");
-  fill_entry(ROOK | BLACK, "bR");
-  fill_entry(PAWN | WHITE, "wP");
-  fill_entry(PAWN | BLACK, "bP");
+  fill_entry(KING | WHITE_PIECE, "wK");
+  fill_entry(KING | BLACK_PIECE, "bK");
+  fill_entry(QUEEN | WHITE_PIECE, "wQ");
+  fill_entry(QUEEN | BLACK_PIECE, "bQ");
+  fill_entry(KNIGHT | WHITE_PIECE, "wN");
+  fill_entry(KNIGHT | BLACK_PIECE, "bN");
+  fill_entry(BISHOP | WHITE_PIECE, "wB");
+  fill_entry(BISHOP | BLACK_PIECE, "bB");
+  fill_entry(ROOK | WHITE_PIECE, "wR");
+  fill_entry(ROOK | BLACK_PIECE, "bR");
+  fill_entry(PAWN | WHITE_PIECE, "wP");
+  fill_entry(PAWN | BLACK_PIECE, "bP");
   fill_entry(NO_PIECE, " O");
-  fill_entry(BLACK, " B");
-  fill_entry(WHITE, " W");
+  fill_entry(BLACK_PIECE, " B");
+  fill_entry(WHITE_PIECE, " W");
 }
 
 inline coord convert(linear_array position)
@@ -138,20 +139,20 @@ inline linear_array convert(coord coord)
 
 inline bool same_colors(square a, square b)
 {
-  if (b & WHITE)
-    return a & WHITE;
-  if (b & BLACK)
-    return a & BLACK;
+  if (b & WHITE_PIECE)
+    return a & WHITE_PIECE;
+  if (b & BLACK_PIECE)
+    return a & BLACK_PIECE;
   return false;
 }
 
-inline bool has_white_color(square a) { return a & WHITE; }
+inline bool has_white_piece_color(square a) { return a & WHITE_PIECE; }
 
-inline bool has_black_color(square a) { return (a & BLACK); }
+inline bool has_black_color(square a) { return (a & BLACK_PIECE); }
 
-inline square black_piece(PieceTypes type) { return type | BLACK | FIRST; }
+inline square black_piece(PieceTypes type) { return type | BLACK_PIECE| FIRST; }
 
-inline square white_piece(PieceTypes type) { return type | WHITE | FIRST; }
+inline square white_piece(PieceTypes type) { return type | WHITE_PIECE | FIRST; }
 
 inline bool has_piece(square b)
 {
@@ -174,14 +175,14 @@ inline bool is_marked_as(square square)
 
 inline bool has_detected_piece(square b)
 {
-  return (b & DETECTED_BLACK_PIECE) || (b & DETECTED_WHITE_PIECE);
+  return (b & DETECTED_BLACK_PIECE) || (b & DETECTED_WHITE_PIECE_PIECE);
 }
 
 inline bool color_and_detected_color_match(square b)
 {
-  if (b & WHITE)
-    return b & DETECTED_WHITE_PIECE;
-  if (b & BLACK)
+  if (b & WHITE_PIECE)
+    return b & DETECTED_WHITE_PIECE_PIECE;
+  if (b & BLACK_PIECE)
     return b & DETECTED_BLACK_PIECE;
   return false;
 }
@@ -356,7 +357,7 @@ void fill_king_move(const coord &location, std::array<square, n_squares> &raw_bo
 void fill_pawn_move(coord location, std::array<square, n_squares> &raw_board)
 {
   auto piece = raw_board[convert(location)];
-  coordinate offset = (piece & WHITE) ? 1 : -1;
+  coordinate offset = (piece & WHITE_PIECE) ? 1 : -1;
 
   if (piece & FIRST)
   { // can jump two squares
@@ -385,7 +386,7 @@ void fill_pawn_move(coord location, std::array<square, n_squares> &raw_board)
 void fill_pawn_attack(coord location, std::array<square, n_squares> &raw_board)
 {
   auto piece = raw_board[convert(location)];
-  coordinate offset = (piece & WHITE) ? 1 : -1;
+  coordinate offset = (piece & WHITE_PIECE) ? 1 : -1;
   coord cord(location.row + offset, location.col - 1);
   if (valid_coord(cord))
     mark_as<ATTACKED_SQUARE>(raw_board[convert(cord)]);
@@ -472,7 +473,7 @@ enum error_code
 };
 const char *board_errors[] = {"king not detected", "ilegal move", "king in check", "unexpected number moves", "casteling not allowed", "inconsistent en passant"};
 
-[[nodiscard]] const char *parse_moved_or_eaten_movement(movement in, std::array<square, n_squares> &raw_board, bool white_turn)
+[[nodiscard]] const char *parse_moved_or_eaten_movement(movement in, std::array<square, n_squares> &raw_board, bool WHITE_PIECE_turn)
 {
   // first we check if the move is legal without check considerations
   std::array<square, n_squares> board_after_move{raw_board};
@@ -488,18 +489,18 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   coordinate our_king_location = -1;
   for (linear_array pos = 0; pos < n_squares; ++pos)
   {
-    if (white_turn)
+    if (WHITE_PIECE_turn)
     {
-      if (BLACK & board_after_move[pos])
+      if (BLACK_PIECE& board_after_move[pos])
         fill_attacked_squares(convert(pos), board_after_move);
-      if (board_after_move[pos] & KING && board_after_move[pos] & WHITE)
+      if (board_after_move[pos] & KING && board_after_move[pos] & WHITE_PIECE)
         our_king_location = pos;
     }
     else
     {
-      if (WHITE & board_after_move[pos])
+      if (WHITE_PIECE & board_after_move[pos])
         fill_attacked_squares(convert(pos), board_after_move);
-      if (board_after_move[pos] & KING && board_after_move[pos] & BLACK)
+      if (board_after_move[pos] & KING && board_after_move[pos] & BLACK_PIECE)
         our_king_location = pos;
     }
   }
@@ -514,13 +515,13 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   clear_en_passant_flags(raw_board);
   if (raw_board[convert(in.filled_squares[0])] & PAWN && abs(in.empty_squares[0].col - in.filled_squares[0].col) == 2) // the pawn pushed two squares
   {
-    coord en_passant_available{in.filled_squares[0].row, white_turn ? in.filled_squares[0].col - 1 : in.filled_squares[0].col + 1};
+    coord en_passant_available{in.filled_squares[0].row, WHITE_PIECE_turn ? in.filled_squares[0].col - 1 : in.filled_squares[0].col + 1};
     raw_board[convert(en_passant_available)] &= EN_PASSANT;
   }
   return nullptr;
 }
 
-[[nodiscard]] const char *parse_en_passant_movement(movement in, std::array<square, n_squares> &raw_board, bool white_turn)
+[[nodiscard]] const char *parse_en_passant_movement(movement in, std::array<square, n_squares> &raw_board, bool WHITE_PIECE_turn)
 {
   // first we check if the move is legal without check considerations
   std::array<square, n_squares> board_after_move{raw_board};
@@ -551,18 +552,18 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   coordinate our_king_location = -1;
   for (linear_array pos = 0; pos < n_squares; ++pos)
   {
-    if (white_turn)
+    if (WHITE_PIECE_turn)
     {
-      if (BLACK & board_after_move[pos])
+      if (BLACK_PIECE& board_after_move[pos])
         fill_attacked_squares(convert(pos), board_after_move);
-      if (board_after_move[pos] & KING && board_after_move[pos] & WHITE)
+      if (board_after_move[pos] & KING && board_after_move[pos] & WHITE_PIECE)
         our_king_location = pos;
     }
     else
     {
-      if (WHITE & board_after_move[pos])
+      if (WHITE_PIECE & board_after_move[pos])
         fill_attacked_squares(convert(pos), board_after_move);
-      if (board_after_move[pos] & KING && board_after_move[pos] & BLACK)
+      if (board_after_move[pos] & KING && board_after_move[pos] & BLACK_PIECE)
         our_king_location = pos;
     }
   }
@@ -580,7 +581,7 @@ const char *board_errors[] = {"king not detected", "ilegal move", "king in check
   return nullptr;
 }
 
-[[nodiscard]] const char *parse_casteling_movement(movement in, std::array<square, n_squares> &raw_board, bool white_turn)
+[[nodiscard]] const char *parse_casteling_movement(movement in, std::array<square, n_squares> &raw_board, bool WHITE_PIECE_turn)
 {
   return board_errors[4]; // TODO: for now casteling is dissallowed because our board is not large enough
 }
@@ -589,25 +590,23 @@ void clear_and_update_detection(std::array<square, n_squares> &m_board, const st
 {
   clear_utility_flags(m_board);
   for (linear_array i = 0; i < n_squares; ++i)
-    m_board[i] |= (measurments[i] > 550) ? DETECTED_BLACK_PIECE : (measurments[i] < 500) ? DETECTED_WHITE_PIECE
+    m_board[i] |= (measurments[i] > 550) ? DETECTED_BLACK_PIECE : (measurments[i] < 500) ? DETECTED_WHITE_PIECE_PIECE
                                                                                          : NO_PIECE; // CHECK: I am still not sure this is correct
 }
 
 struct Board
 {
-  Board(bool is_white_to_start_first = true) : white_turn{is_white_to_start_first}
+  Board(bool is_WHITE_PIECE_to_start_first = true) : WHITE_PIECE_turn{is_WHITE_PIECE_to_start_first}
   {
     initialize_table();
   }
 
   std::array<square, n_squares> m_board;
   size_t offset = 0;
-  bool white_turn;
+  bool WHITE_PIECE_turn;
 
   /*
-  Each function inside the update must be 
-  tested to the limit so that things are 
-  correct
+  each function inside the update must be tested to the limit so that things are correct
   */
   [[nodiscard]] const char *update(const std::array<uint16_t, n_squares> &measurments)
   {
@@ -617,23 +616,23 @@ struct Board
     switch (moved_piece.number_of_moves)
     {
     case 2:
-      error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, white_turn);
+      error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, WHITE_PIECE_turn);
       break;
     case 3:
-      error_msg = parse_en_passant_movement(moved_piece, m_board, white_turn);
+      error_msg = parse_en_passant_movement(moved_piece, m_board, WHITE_PIECE_turn);
       break;
     case 4:
-      error_msg = parse_casteling_movement(moved_piece, m_board, white_turn);
+      error_msg = parse_casteling_movement(moved_piece, m_board, WHITE_PIECE_turn);
       break;
     default:
       error_msg = board_errors[TOO_MANY_MOVES];
       break;
     }
-    white_turn = !white_turn;
+    WHITE_PIECE_turn = !WHITE_PIECE_turn;
     return error_msg;
   }
 
-  void map_to(std::array<unsigned char,17>& dst){
+  void map_to(std::array<unsigned char,n_squares+1>& dst){
     for(size_t i = 1; i < dst.size(); ++i)
       dst[i] = MASK_EXTERNAL_INFO & m_board[i-1];
   }
@@ -648,6 +647,7 @@ struct Board
 };
 
 
+
 uint8_t s0 = 7; // 38 - 7
 uint8_t s1 = 6; // 35 - 6
 uint8_t s2 = 5; // 34 - 5
@@ -657,8 +657,8 @@ uint8_t controlPin[] = {s0, s1, s2, s3};
 
 uint8_t SIG_pin = A0;
 
-std::array<uint8_t,17> board_status;
-std::array<uint16_t,16> measurments;
+std::array<uint8_t,1+n_squares> board_status;
+std::array<uint16_t,n_squares> measurments;
 
 inline uint16_t readMux(int channel)
 {
