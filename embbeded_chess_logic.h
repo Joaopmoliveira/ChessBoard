@@ -25,6 +25,16 @@ using square = uint_fast16_t;
 constexpr coordinate board_size = 4;
 constexpr linear_array n_squares = board_size * board_size;
 
+#define DEBUG_CHECK 1;
+
+#ifdef DEBUG_CHECK
+array<square,n_squares> copy_raw_board;
+#endif
+
+#define DEBUG_CHECK_MARK_BITS_FOR_VALIDATION(raw_board) for(linear_array pos = 0; pos < n_squares; ++pos ) copy_raw_board[pos] = raw_board[pos];
+
+#define DEBUG_CHECK_CHECK_MARKED_BITS(raw_board,bits) for(linear_array pos = 0; pos < n_squares; ++pos )  if((raw_board[pos]&bits) != (copy_raw_board[pos]&bits)) throw 1;
+
 /*
 [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16] bits in byte
 1 bit - flags the color is WHITE_PIECE
@@ -94,9 +104,10 @@ enum error_code
   PINNED_PIECE = 2,
   TOO_MANY_MOVES = 3,
   CASTELING_DISSALOWED = 4,
-  INVALID_EN_PASSANT = 5
+  INVALID_EN_PASSANT = 5,
+  INCONSISTENT_MOVES = 6
 };
-const char *board_errors[] = {"king not detected", "ilegal move", "king in check", "unexpected number moves", "casteling not allowed", "inconsistent en passant"};
+const char *board_errors[] = {"king not detected", "ilegal move", "king in check", "unexpected number moves", "casteling not allowed", "inconsistent en passant","inconsistent moves"};
 
 struct Board
 {
@@ -111,7 +122,7 @@ struct Board
   */
   [[nodiscard]] const char *update(const array<uint16_t, n_squares> &measurments);
 
-  void map_to(array<unsigned char,16>& dst);
+  void map_to(array<unsigned char,n_squares>& dst);
 
   Board &operator<<(square type);
 };
@@ -123,32 +134,107 @@ NOTE: Because some IDEs are absolutely insane *****cough cough*** Arduino I am l
 we need to forward declare all functions so that the IDE does not do it for us
 */
 
+/*
+The function takes a piece and fills its string representation
+*/
 void fill_entry(square address, const char string[2]);
+
+/*
+The function takes a piece and fills its string representation in the internal storage "piece_names"
+*/
 square update_move(square p);
+/*
+The function takes a piece and obtains its string representation from the internal storage "piece_names"
+*/
 unsigned char *get_entry(square address);
+/*
+The initialize_table function should only be called once, although there is not problem if its called more times. 
+The function fills all the imporant entries in the internal storage "piece_names"
+*/
 void initialize_table();
+/*
+The function takes a linear index in 0..n_squares and converts it to a row and col coordinate structure
+*/
 coord convert(linear_array position);
+/*
+The function validates if the coord has its row and col in 0.. board_size-1
+*/
 bool valid_coord(coord in);
+/*
+The function converts from row and col coordinates into a linear index in 0..n_squares
+*/
 linear_array convert(coord coord);
+/*
+Checks if the current colors, e.g., the piece in memory from the previous state, have the same color. The function ignores
+detected color information
+*/
 bool same_colors(square a, square b);
+/*
+The function queries if the current colors, , e.g., the piece in memory from the previous state, has a white color
+*/
 bool has_white_piece_color(square a);
+/*
+The function queries if the current colors, , e.g., the piece in memory from the previous state, has a black color
+*/
 bool has_black_color(square a);
+/*
+The function creates a black piece in the proper initialized state, e.g., with the first bit toggled on
+*/
 square black_piece(PieceTypes type);
+/*
+The function creates a white piece in the proper initialized state, e.g., with the first bit toggled on
+*/
 square white_piece(PieceTypes type);
+/*
+The function selects the bits that represent a piece in the previous state and returns true if there is a piece
+*/
 bool has_piece(square b);
+/*
+The function returns true if the bits that represent piece detection are toggled
+*/
 bool has_detected_piece(square b);
+/*
+The function returns true if the color of the piece in the previous state and the detected color are the same
+*/
 bool color_and_detected_color_match(square b);
+/*
+The function turns 
+*/
 void clear_utility_flags(array<square, n_squares> &raw_board);
+/*
+*/
 void clear_en_passant_flags(array<square, n_squares> &raw_board);
+/*
+*/
 void fill_pawn_move(coord location, array<square, n_squares> &raw_board);
+/*
+*/
 void fill_pawn_attack(coord location, array<square, n_squares> &raw_board);
+/*
+*/
 void fill_attacked_squares(coord location, array<square, n_squares> &raw_board);
+/*
+*/
 void fill_allowed_moves(coord location, array<square, n_squares> &raw_board);
+/*
+*/
 movement find_movement(const array<square, n_squares> &board_state);
-[[nodiscard]] const char *parse_moved_or_eaten_movement(const movement& in, array<square, n_squares> &raw_board, bool WHITE_PIECE_turn);
-[[nodiscard]] const char *parse_en_passant_movement(const movement& in, array<square, n_squares> &raw_board, bool WHITE_PIECE_turn);
-[[nodiscard]] const char *parse_casteling_movement(const movement& in, array<square, n_squares> &raw_board, bool WHITE_PIECE_turn);
+/*
+*/
+bool validade_motion(const movement& m);
+/*
+*/
+[[nodiscard]] const char *parse_moved_or_eaten_movement(const movement& in, array<square, n_squares> &raw_board, bool white_turn);
+/*
+*/
+[[nodiscard]] const char *parse_en_passant_movement(const movement& in, array<square, n_squares> &raw_board, bool white_turn);
+/*
+*/
+[[nodiscard]] const char *parse_casteling_movement(const movement& in, array<square, n_squares> &raw_board, bool white_turn);
+/*
+*/
 void clear_and_update_detection(array<square, n_squares> &m_board, const array<uint16_t, n_squares> &measurments);
+
 
 template<typename T>
 inline T absolute(const T& e){
@@ -286,8 +372,8 @@ movement::movement() : number_of_moves{0}, number_of_empty_squares{0}, number_of
 
 void movement::check_and_store_if_changed_square(square in, linear_array pos)
 {
-  if (!has_piece(in) && has_detected_piece(in))
-  { // piece was to this previously empty square
+  if (!has_piece(in) && has_detected_piece(in)) // piece was to this previously empty square
+  { 
     changed_squares[number_of_moves] = in;
     filled_squares[number_of_filled_squares] = convert(pos);
     ++number_of_moves;
@@ -302,7 +388,7 @@ void movement::check_and_store_if_changed_square(square in, linear_array pos)
     ++number_of_empty_squares;
     return;
   }
-  if (has_piece(in) && !color_and_detected_color_match(in)) // the square as always filled but the colors between the current piece and the new piece are incorrect
+  if (has_piece(in) && !color_and_detected_color_match(in)) // the square as always filled but the colors between the current piece and the new piece are different, thus piece as eaten
   {
     changed_squares[number_of_moves] = in;
     filled_squares[number_of_filled_squares] = convert(pos);
@@ -351,7 +437,7 @@ void fill_rook_move(coord location, array<square, n_squares> &raw_board) // TODO
     }
     else
       mark_as<mark_type>(raw_board[convert({location.row, col})]);
-}
+ }
 
 template <PieceTypes mark_type>
 void fill_bishop_move(const coord &location, array<square, n_squares> &raw_board) // TODO : this code can be considerably simplified
@@ -473,6 +559,7 @@ void fill_pawn_attack(coord location, array<square, n_squares> &raw_board)
 
 void fill_attacked_squares(coord location, array<square, n_squares> &raw_board)
 {
+  DEBUG_CHECK_MARK_BITS_FOR_VALIDATION(raw_board);
   switch (MASK_PIECES & raw_board[convert(location)])
   {
   case PAWN:
@@ -498,10 +585,12 @@ void fill_attacked_squares(coord location, array<square, n_squares> &raw_board)
   default:
     break;
   }
+  DEBUG_CHECK_CHECK_MARKED_BITS(raw_board,WHITE_PIECE | BLACK_PIECE| PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST | DETECTED_BLACK_PIECE | DETECTED_WHITE_PIECE | LEGAL_SQUARE);
 }
 
 void fill_allowed_moves(coord location, array<square, n_squares> &raw_board)
 {
+  DEBUG_CHECK_MARK_BITS_FOR_VALIDATION(raw_board);
   switch (MASK_PIECES & raw_board[convert(location)])
   {
   case PAWN:
@@ -527,16 +616,8 @@ void fill_allowed_moves(coord location, array<square, n_squares> &raw_board)
   default:
     break;
   }
+  DEBUG_CHECK_CHECK_MARKED_BITS(raw_board,WHITE_PIECE | BLACK_PIECE| PAWN | ROOK | BISHOP | KNIGHT | QUEEN | KING | EN_PASSANT | FIRST | DETECTED_BLACK_PIECE | DETECTED_WHITE_PIECE | ATTACKED_SQUARE);
 };
-
-movement find_movement(const array<square, n_squares> &board_state)
-{
-  movement detected_movements{};
-  for (linear_array pos = 0; pos < n_squares; ++pos)
-    if (board_state[pos])
-      detected_movements.check_and_store_if_changed_square(board_state[pos], pos);
-  return detected_movements;
-}
 
 [[nodiscard]] const char *parse_moved_or_eaten_movement(const movement& in, array<square, n_squares> &raw_board, bool WHITE_PIECE_turn)
 {
@@ -659,46 +740,65 @@ void clear_and_update_detection(array<square, n_squares> &m_board, const array<u
                                                                                          : NO_PIECE; // CHECK: I am still not sure this is correct
 }
 
+inline movement find_movement(const array<square, n_squares> &raw_board)
+{
+  movement detected_movements{};
+  for (linear_array pos = 0; pos < n_squares; ++pos)
+    if (raw_board[pos])
+      detected_movements.check_and_store_if_changed_square(raw_board[pos], pos);
+  return detected_movements;
+}
 
-  Board::Board(bool is_white_to_start) : white_turn{is_white_to_start}
-  {
-    initialize_table();
+inline bool validade_motion(const movement& m){
+  switch (m.number_of_moves){
+  case 2: //piece moved or eaten
+    return m.number_of_empty_squares == 1 && m.number_of_filled_squares == 1;
+  case 3: //en passant happend
+    return m.number_of_empty_squares == 2 && m.number_of_filled_squares == 1;
+  default:
+    return true;
   }
+}
 
-  const char*  Board::update(const array<uint16_t, n_squares> &measurments)
-  {
-    clear_and_update_detection(m_board, measurments);
-    movement moved_piece = find_movement(m_board);
-    const char *error_msg = nullptr;
-    switch (moved_piece.number_of_moves)
-    {
-    case 2:
-      error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, white_turn);
+Board::Board(bool is_white_to_start) : white_turn{is_white_to_start}{
+  initialize_table();
+}
+
+const char*  Board::update(const array<uint16_t, n_squares> &measurments){
+  const char *error_msg = nullptr;
+  clear_and_update_detection(m_board, measurments);
+  movement moved_piece = find_movement(m_board);
+  if(!validade_motion(moved_piece))
+    error_msg = board_errors[INCONSISTENT_MOVES];
+  else 
+    switch (moved_piece.number_of_moves){
+      case 2:
+        error_msg = parse_moved_or_eaten_movement(moved_piece, m_board, white_turn);
       break;
-    case 3:
-      error_msg = parse_en_passant_movement(moved_piece, m_board, white_turn);
-      break;
-    case 4:
-      error_msg = parse_casteling_movement(moved_piece, m_board, white_turn);
-      break;
-    default:
-      error_msg = board_errors[TOO_MANY_MOVES];
-      break;
+      case 3:
+        error_msg = parse_en_passant_movement(moved_piece, m_board, white_turn);
+        break;
+      case 4:
+        error_msg = parse_casteling_movement(moved_piece, m_board, white_turn);
+        break;
+      default:
+        error_msg = board_errors[TOO_MANY_MOVES];
+        break;
     }
+  if(!error_msg)
     white_turn = !white_turn;
-    return error_msg;
-  }
+  return error_msg;
+}
 
-  void  Board::map_to(array<unsigned char,16>& dst){
-    for(size_t i = 0; i < dst.size(); ++i)
-      dst[i] = MASK_EXTERNAL_INFO & m_board[i];
-  }
+void Board::map_to(array<unsigned char,16>& dst){
+  for(size_t i = 0; i < dst.size(); ++i)
+    dst[i] = MASK_EXTERNAL_INFO & m_board[i];
+}
 
-  Board& Board::operator<<(square type)
-  {
-    // this means that when we fill the board, at a later point in time we can refill it with a known initial position
-    m_board[offset % n_squares] = type;
-    ++offset;
-    return *this;
-  }
+Board& Board::operator<<(square type){
+  // this means that when we fill the board, at a later point in time we can refill it with a known initial position
+  m_board[offset % n_squares] = type;
+  ++offset;
+  return *this;
+}
 
